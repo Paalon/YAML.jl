@@ -7,7 +7,7 @@ CurrentModule = YAML
 ```
 
 ```@docs
-YAML.write_file
-YAML.write
-YAML.yaml
+write_file
+write
+yaml
 ```
