@@ -123,7 +123,7 @@ mutable struct TokenStream
             0,
             0,
             -1,
-            Vector{Int}(undef, 0),
+            Int[],
             true,
             Dict(),
         )
@@ -357,21 +357,17 @@ end
 
 const whitespace = "\0 \t\r\n\u0085\u2028\u2029"
 
-function check_directive(stream::TokenStream)
-    stream.column == 0
-end
+check_directive(stream::TokenStream) = stream.column == 0
 
-function check_document_start(stream::TokenStream)
+check_document_start(stream::TokenStream) =
     stream.column == 0 &&
-        prefix(stream.input, 3) == "---" &&
-        in(peek(stream.input, 3), whitespace)
-end
+    prefix(stream.input, 3) == "---" &&
+    in(peek(stream.input, 3), whitespace)
 
-function check_document_end(stream::TokenStream)
+check_document_end(stream::TokenStream) =
     stream.column == 0 &&
-        prefix(stream.input, 3) == "..." &&
-        (in(peek(stream.input, 3), whitespace) || isnothing(peek(stream.input, 3)))
-end
+    prefix(stream.input, 3) == "..." &&
+    (in(peek(stream.input, 3), whitespace) || isnothing(peek(stream.input, 3)))
 
 check_block_entry(stream::TokenStream) = in(peek(stream.input, 1), whitespace)
 
@@ -749,13 +745,14 @@ function scan_line_break(stream::TokenStream)
         else
             forwardchars!(stream)
         end
-        return "\n"
+        "\n"
     elseif in(peek(stream.input), "\u2028\u2029")
         ch = peek(stream.input)
         forwardchars!(stream)
-        return ch
+        ch
+    else
+        ""
     end
-    return ""
 end
 
 # Scan past whitespace to the next token.
