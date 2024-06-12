@@ -115,6 +115,7 @@ function _print(io::IO, val::Float64, level::Int=0, ignore_level::Bool=false)
     end
 end
 
+# TODO: Use canonical form of YAML 1.2
 _print(io::IO, val::Nothing, level::Int=0, ignore_level::Bool=false) = println(io, "~") # this is what the YAML parser interprets as nothing
 
 # _print any other single value
