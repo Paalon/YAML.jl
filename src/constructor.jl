@@ -327,22 +327,27 @@ function construct_yaml_float(constructor::Constructor, node::Node)
     parse(Float64, value)
 end
 
-const timestamp_pat = r"^(\d{4})-    (?# year)
-                         (\d\d?)-    (?# month)
-                         (\d\d?)     (?# day)
-                        (?:
-                          (?:[Tt]|[ \t]+)
-                          (\d\d?):      (?# hour)
-                          (\d\d):       (?# minute)
-                          (\d\d)        (?# second)
-                          (?:\.(\d*))?  (?# fraction)
-                          (?:
-                            [ \t]*(Z|(?:[+\-])(\d\d?)
-                              (?:
-                                  :(\d\d)
-                              )?)
-                          )?
-                        )?$"x
+const timestamp_pat = r"^
+    (\d{4})-    (?# year)
+    (\d\d?)-    (?# month)
+    (\d\d?)     (?# day)
+    (?:
+        (?:[Tt]|[ \t]+)
+        (\d\d?):      (?# hour)
+        (\d\d):       (?# minute)
+        (\d\d)        (?# second)
+        (?:\.(\d*))?  (?# fraction)
+        (?:
+            [ \t]*(Z|
+                (?:[+\-])
+                (\d\d?)
+                (?:
+                    :(\d\d)
+                )?
+            )
+        )?
+    )?
+$"x
 
 function construct_yaml_timestamp(constructor::Constructor, node::Node)
     value = construct_scalar(constructor, node)
