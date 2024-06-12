@@ -1,4 +1,4 @@
-struct ComposerError
+struct ComposerError <: Exception
     context::Union{String, Nothing}
     context_mark::Union{Mark, Nothing}
     problem::Union{String, Nothing}
