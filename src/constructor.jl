@@ -255,8 +255,7 @@ function custom_mapping(dicttype::Function)
     if !(dicttype_test isa AbstractDict)
         throw(ArgumentError("The dicttype Function does not return an AbstractDict"))
     end
-    return (constructor::Constructor, node::Node) ->
-        construct_mapping(dicttype, constructor, node)
+    (constructor::Constructor, node::Node) -> construct_mapping(dicttype, constructor, node)
 end
 
 function construct_yaml_null(constructor::Constructor, node::Node)
@@ -291,11 +290,11 @@ function construct_yaml_int(constructor::Constructor, node::Node)
     end
 
     if length(value) > 2 && value[1] == '0' && (value[2] == 'x' || value[2] == 'X')
-        return parse(Int, value[3:end], base=16)
+        parse(Int, value[3:end], base=16)
     elseif length(value) > 1 && value[1] == '0'
-        return parse(Int, value, base=8)
+        parse(Int, value, base=8)
     else
-        return parse(Int, value, base=10)
+        parse(Int, value, base=10)
     end
 end
 
@@ -324,7 +323,7 @@ function construct_yaml_float(constructor::Constructor, node::Node)
         end
     end
 
-    return parse(Float64, value)
+    parse(Float64, value)
 end
 
 const timestamp_pat = r"^(\d{4})-    (?# year)
@@ -397,70 +396,42 @@ function construct_yaml_timestamp(constructor::Constructor, node::Node)
     # TODO: Also, I'm not sure if there is a way to numerically set the timezone
     # in Calendar.
 
-    return DateTime(yr, mn, dy, h, m, s, ms)
+    DateTime(yr, mn, dy, h, m, s, ms)
 end
 
-function construct_yaml_omap(constructor::Constructor, node::Node)
-    throw(
-        ConstructorError(
-            nothing,
-            nothing,
-            "omap type not yet implemented",
-            node.start_mark,
-        ),
-    )
-end
+construct_yaml_omap(constructor::Constructor, node::Node) = throw(
+    ConstructorError(nothing, nothing, "omap type not yet implemented", node.start_mark),
+)
 
-function construct_yaml_pairs(constructor::Constructor, node::Node)
-    throw(
-        ConstructorError(
-            nothing,
-            nothing,
-            "pairs type not yet implemented",
-            node.start_mark,
-        ),
-    )
-end
+construct_yaml_pairs(constructor::Constructor, node::Node) = throw(
+    ConstructorError(nothing, nothing, "pairs type not yet implemented", node.start_mark),
+)
 
-function construct_yaml_set(constructor::Constructor, node::Node)
-    throw(
-        ConstructorError(nothing, nothing, "set type not yet implemented", node.start_mark),
-    )
-end
+construct_yaml_set(constructor::Constructor, node::Node) = throw(
+    ConstructorError(nothing, nothing, "set type not yet implemented", node.start_mark),
+)
 
-function construct_yaml_str(constructor::Constructor, node::Node)
+construct_yaml_str(constructor::Constructor, node::Node) =
     string(construct_scalar(constructor, node))
-end
 
-function construct_yaml_seq(constructor::Constructor, node::Node)
+construct_yaml_seq(constructor::Constructor, node::Node) =
     construct_sequence(constructor, node)
-end
 
-function construct_yaml_map(constructor::Constructor, node::Node)
+construct_yaml_map(constructor::Constructor, node::Node) =
     construct_mapping(constructor, node)
-end
 
-function construct_yaml_object(constructor::Constructor, node::Node)
-    throw(
-        ConstructorError(
-            nothing,
-            nothing,
-            "object type not yet implemented",
-            node.start_mark,
-        ),
-    )
-end
+construct_yaml_object(constructor::Constructor, node::Node) = throw(
+    ConstructorError(nothing, nothing, "object type not yet implemented", node.start_mark),
+)
 
-function construct_undefined(constructor::Constructor, node::Node)
-    throw(
-        ConstructorError(
-            nothing,
-            nothing,
-            "could not determine a constructor for the tag '$(node.tag)'",
-            node.start_mark,
-        ),
-    )
-end
+construct_undefined(constructor::Constructor, node::Node) = throw(
+    ConstructorError(
+        nothing,
+        nothing,
+        "could not determine a constructor for the tag '$(node.tag)'",
+        node.start_mark,
+    ),
+)
 
 function construct_yaml_binary(constructor::Constructor, node::Node)
     value = replace(string(construct_scalar(constructor, node)), "\n" => "")

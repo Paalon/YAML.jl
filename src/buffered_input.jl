@@ -8,7 +8,7 @@ mutable struct BufferedInput
     avail::UInt64
 
     function BufferedInput(input::IO)
-        return new(input, Vector{Char}(undef, 0), 0, 0)
+        new(input, Vector{Char}(undef, 0), 0, 0)
     end
 end
 
@@ -33,7 +33,7 @@ function peek(bi::BufferedInput, i::Integer=0)
     if bi.avail < i + 1
         _fill(bi, i + 1 - bi.avail)
     end
-    return bi.buffer[bi.offset+i+1]
+    bi.buffer[bi.offset+i+1]
 end
 
 # Return the string formed from the first n characters from the current position
@@ -42,7 +42,7 @@ function prefix(bi::BufferedInput, n::Integer=1)
     if bi.avail < n + 1
         _fill(bi, n + 1 - bi.avail)
     end
-    return string(bi.buffer[(bi.offset+1):(bi.offset+n)]...)
+    string(bi.buffer[(bi.offset+1):(bi.offset+n)]...)
 end
 
 # NOPE: This is wrong. What if n > bi.avail

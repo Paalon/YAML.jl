@@ -23,8 +23,9 @@ end
 function show(io::IO, error::ParserError)
     if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
+    else
+        print(io, error.problem, " at ", error.problem_mark)
     end
-    print(io, error.problem, " at ", error.problem_mark)
 end
 
 mutable struct EventStream
@@ -66,7 +67,7 @@ function peek(stream::EventStream)
         end
     end
 
-    return stream.next_event
+    stream.next_event
 end
 
 function forward!(stream::EventStream)
@@ -83,7 +84,7 @@ function forward!(stream::EventStream)
 
     e = stream.next_event
     stream.next_event = nothing
-    return e
+    e
 end
 
 function process_directives(stream::EventStream)
@@ -244,22 +245,17 @@ function parse_document_content(stream::EventStream)
     end
 end
 
-function parse_block_node(stream::EventStream)
-    parse_node(stream, true)
-end
+parse_block_node(stream::EventStream) = parse_node(stream, true)
 
-function parse_flow_node(stream::EventStream)
-    parse_node(stream)
-end
+parse_flow_node(stream::EventStream) = parse_node(stream)
 
-function parse_block_node_or_indentless_sequence(stream::EventStream)
+parse_block_node_or_indentless_sequence(stream::EventStream) =
     parse_node(stream, true, true)
-end
 
 function _parse_node(token::AliasToken, stream::EventStream, block, indentless_sequence)
     forward!(stream.input)
     stream.state = pop!(stream.states)
-    return AliasEvent(token.span.start_mark, token.span.end_mark, token.value)
+    AliasEvent(token.span.start_mark, token.span.end_mark, token.value)
 end
 
 function __parse_node(
@@ -724,6 +720,5 @@ function parse_flow_mapping_empty_value(stream::EventStream)
     process_empty_scalar(stream, peek(stream.input).span.start_mark)
 end
 
-function process_empty_scalar(stream::EventStream, mark::Mark)
+process_empty_scalar(stream::EventStream, mark::Mark) =
     ScalarEvent(mark, mark, nothing, nothing, (true, false), "", nothing)
-end

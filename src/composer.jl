@@ -63,7 +63,7 @@ function handle_event(event::AliasEvent, composer)
             event.start_mark,
         ),
     )
-    return composer.anchors[anchor]
+    composer.anchors[anchor]
 end
 
 handle_error(event, composer, anchor) =

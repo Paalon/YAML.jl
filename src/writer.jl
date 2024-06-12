@@ -7,10 +7,11 @@
 
 Write some data (e.g. a dictionary or an array) to a YAML file.
 """
-write_file(path::AbstractString, data::Any, prefix::AbstractString="") =
+function write_file(path::AbstractString, data::Any, prefix::AbstractString="")
     open(path, "w") do io
         write(io, data, prefix)
     end
+end
 
 """
     write([io], data, prefix="")
@@ -26,7 +27,7 @@ end
 function write(data::Any, prefix::AbstractString="")
     io = IOBuffer()
     write(io, data, prefix)
-    return String(take!(io))
+    String(take!(io))
 end
 
 """
@@ -37,7 +38,7 @@ Return a YAML-formatted string of the `data`.
 yaml(data::Any) = write(data)
 
 # recursively print a dictionary
-_print(io::IO, dict::AbstractDict, level::Int=0, ignore_level::Bool=false) =
+function _print(io::IO, dict::AbstractDict, level::Int=0, ignore_level::Bool=false)
     if isempty(dict)
         println(io, "{}")
     else
@@ -45,9 +46,10 @@ _print(io::IO, dict::AbstractDict, level::Int=0, ignore_level::Bool=false) =
             _print(io, pair, level, ignore_level ? i == 1 : false) # ignore indentation of first pair
         end
     end
+end
 
 # recursively print an array
-_print(io::IO, arr::AbstractVector, level::Int=0, ignore_level::Bool=false) =
+function _print(io::IO, arr::AbstractVector, level::Int=0, ignore_level::Bool=false)
     if isempty(arr)
         println(io, "[]")
     else
@@ -61,6 +63,7 @@ _print(io::IO, arr::AbstractVector, level::Int=0, ignore_level::Bool=false) =
             end
         end
     end
+end
 
 # print a single key-value pair
 function _print(io::IO, pair::Pair, level::Int=0, ignore_level::Bool=false)
@@ -79,7 +82,7 @@ function _print(io::IO, pair::Pair, level::Int=0, ignore_level::Bool=false)
 end
 
 # _print a single string
-_print(io::IO, str::AbstractString, level::Int=0, ignore_level::Bool=false) =
+function _print(io::IO, str::AbstractString, level::Int=0, ignore_level::Bool=false)
     if occursin('\n', strip(str)) || occursin('"', str)
         if endswith(str, "\n\n")   # multiple trailing newlines: keep
             println(io, "|+")
@@ -97,9 +100,10 @@ _print(io::IO, str::AbstractString, level::Int=0, ignore_level::Bool=false) =
         # quote and escape
         println(io, replace(repr(MIME("text/plain"), str), raw"\$" => raw"$"))
     end
+end
 
 # handle NaNs and Infs
-_print(io::IO, val::Float64, level::Int=0, ignore_level::Bool=false) =
+function _print(io::IO, val::Float64, level::Int=0, ignore_level::Bool=false)
     if isfinite(val)
         println(io, string(val)) # the usual case
     elseif isnan(val)
@@ -109,6 +113,7 @@ _print(io::IO, val::Float64, level::Int=0, ignore_level::Bool=false) =
     elseif val == -Inf
         println(io, "-.inf")
     end
+end
 
 _print(io::IO, val::Nothing, level::Int=0, ignore_level::Bool=false) = println(io, "~") # this is what the YAML parser interprets as nothing
 

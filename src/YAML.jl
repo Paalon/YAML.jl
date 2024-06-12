@@ -14,7 +14,7 @@ include("composer.jl")
 include("constructor.jl")
 include("writer.jl") # write Julia dictionaries to YAML files
 
-const _constructor = Union{Nothing, Dict}
+const _constructor = Union{Dict, Nothing}
 const _dicttype = Union{Type, Function}
 
 # add a dicttype-aware version of construct_mapping to the constructors
@@ -29,7 +29,7 @@ function _patch_constructors(more_constructors::_constructor, dicttype::_dicttyp
     elseif dicttype != Dict{Any, Any} # only warn if another type has explicitly been set
         @warn "dicttype=$dicttype has no effect because more_constructors has the key \"tag:yaml.org,2002:map\""
     end
-    return more_constructors
+    more_constructors
 end
 
 load(ts::TokenStream, constructor::Constructor) =
@@ -64,7 +64,7 @@ mutable struct YAMLDocIterator
     function YAMLDocIterator(input::IO, constructor::Constructor)
         it = new(input, TokenStream(input), constructor, nothing)
         it.next_doc = eof(it.input) ? nothing : load(it.ts, it.constructor)
-        return it
+        it
     end
 end
 
@@ -90,7 +90,7 @@ function next(it::YAMLDocIterator, state)
         reset!(it.ts)
         it.next_doc = load(it.ts, it.constructor)
     end
-    return doc, nothing
+    doc, nothing
 end
 
 done(it::YAMLDocIterator, state) = isnothing(it.next_doc)
@@ -106,14 +106,16 @@ load(input::AbstractString, args...; kwargs...) = load(IOBuffer(input), args...;
 load_all(input::AbstractString, args...; kwargs...) =
     load_all(IOBuffer(input), args...; kwargs...)
 
-load_file(filename::AbstractString, args...; kwargs...) =
+function load_file(filename::AbstractString, args...; kwargs...)
     open(filename, "r") do input
         load(input, args...; kwargs...)
     end
+end
 
-load_all_file(filename::AbstractString, args...; kwargs...) =
+function load_all_file(filename::AbstractString, args...; kwargs...)
     open(filename, "r") do input
         load_all(input, args...; kwargs...)
     end
+end
 
 end # module

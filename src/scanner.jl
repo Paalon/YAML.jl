@@ -394,27 +394,23 @@ function check_document_end(stream::TokenStream)
         (in(peek(stream.input, 3), whitespace) || isnothing(peek(stream.input, 3)))
 end
 
-function check_block_entry(stream::TokenStream)
-    in(peek(stream.input, 1), whitespace)
-end
+check_block_entry(stream::TokenStream) = in(peek(stream.input, 1), whitespace)
 
-function check_key(stream::TokenStream)
+check_key(stream::TokenStream) =
     stream.flow_level > 0 || in(peek(stream.input, 1), whitespace)
-end
 
 function check_value(stream::TokenStream)
     cnext = peek(stream.input, 1)
     stream.flow_level > 0 || in(cnext, whitespace) || isnothing(cnext)
 end
 
-function check_plain(stream::TokenStream)
+check_plain(stream::TokenStream) =
     !in(peek(stream.input), "\0 \t\r\n\u0085\u2028\u2029-?:,[]{}#&*!|>\'\"%@`\uFEFF") || (
         !in(peek(stream.input, 1), whitespace) && (
             peek(stream.input) == '-' ||
             (stream.flow_level == 0 && in(peek(stream.input), "?:"))
         )
     )
-end
 
 # Fetchers
 # --------
@@ -452,13 +448,10 @@ function fetch_directive(stream::TokenStream)
     enqueue!(stream.token_queue, scan_directive(stream))
 end
 
-function fetch_document_start(stream::TokenStream)
+fetch_document_start(stream::TokenStream) =
     fetch_document_indicator(stream, DocumentStartToken)
-end
 
-function fetch_document_end(stream::TokenStream)
-    fetch_document_indicator(stream, DocumentEndToken)
-end
+fetch_document_end(stream::TokenStream) = fetch_document_indicator(stream, DocumentEndToken)
 
 function fetch_document_indicator(stream::TokenStream, tokentype)
     # Set the current intendation to -1.
@@ -487,13 +480,11 @@ function fetch_byte_order_mark(stream::TokenStream)
     enqueue!(stream.token_queue, ByteOrderMarkToken(Span(start_mark, end_mark)))
 end
 
-function fetch_flow_sequence_start(stream::TokenStream)
+fetch_flow_sequence_start(stream::TokenStream) =
     fetch_flow_collection_start(stream, FlowSequenceStartToken)
-end
 
-function fetch_flow_mapping_start(stream::TokenStream)
+fetch_flow_mapping_start(stream::TokenStream) =
     fetch_flow_collection_start(stream, FlowMappingStartToken)
-end
 
 function fetch_flow_collection_start(stream::TokenStream, tokentype)
     # '[' and '{' may start a simple key.
@@ -512,13 +503,11 @@ function fetch_flow_collection_start(stream::TokenStream, tokentype)
     enqueue!(stream.token_queue, tokentype(Span(start_mark, end_mark)))
 end
 
-function fetch_flow_sequence_end(stream::TokenStream)
+fetch_flow_sequence_end(stream::TokenStream) =
     fetch_flow_collection_end(stream, FlowSequenceEndToken)
-end
 
-function fetch_flow_mapping_end(stream::TokenStream)
+fetch_flow_mapping_end(stream::TokenStream) =
     fetch_flow_collection_end(stream, FlowMappingEndToken)
-end
 
 function fetch_flow_collection_end(stream::TokenStream, tokentype)
     # Reset possible simple key on the current level.
@@ -724,13 +713,9 @@ function fetch_tag(stream::TokenStream)
     enqueue!(stream.token_queue, scan_tag(stream))
 end
 
-function fetch_literal(stream::TokenStream)
-    fetch_block_scalar(stream, '|')
-end
+fetch_literal(stream::TokenStream) = fetch_block_scalar(stream, '|')
 
-function fetch_folded(stream::TokenStream)
-    fetch_block_scalar(stream, '>')
-end
+fetch_folded(stream::TokenStream) = fetch_block_scalar(stream, '>')
 
 function fetch_block_scalar(stream::TokenStream, style::Char)
     # A simple key may follow a block scalar.
@@ -743,13 +728,9 @@ function fetch_block_scalar(stream::TokenStream, style::Char)
     enqueue!(stream.token_queue, scan_block_scalar(stream, style))
 end
 
-function fetch_single(stream::TokenStream)
-    fetch_flow_scalar(stream, '\'')
-end
+fetch_single(stream::TokenStream) = fetch_flow_scalar(stream, '\'')
 
-function fetch_double(stream::TokenStream)
-    fetch_flow_scalar(stream, '"')
-end
+fetch_double(stream::TokenStream) = fetch_flow_scalar(stream, '"')
 
 function fetch_flow_scalar(stream::TokenStream, style::Char)
     # A flow scalar could be a simple key.
@@ -915,7 +896,7 @@ function scan_yaml_directive_value(stream::TokenStream, start_mark::Mark)
             ),
         )
     end
-    return (major, minor)
+    major, minor
 end
 
 function scan_yaml_directive_number(stream::TokenStream, start_mark::Mark)
