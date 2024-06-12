@@ -10,7 +10,7 @@ StringEncodings = "69024149-9ee7-55f6-a4c4-859efe599b68"
 
 [compat]
 StringEncodings = "0.3"
-julia = "1"
+julia = "^1.1"
 
 [extras]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
