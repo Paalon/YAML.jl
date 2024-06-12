@@ -1,4 +1,3 @@
-
 # YAML Tokens.
 # Each token must include at minimum member "span::Span".
 abstract type Token end

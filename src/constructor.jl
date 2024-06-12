@@ -1,4 +1,3 @@
-
 struct ConstructorError
     context::Union{String, Nothing}
     context_mark::Union{Mark, Nothing}

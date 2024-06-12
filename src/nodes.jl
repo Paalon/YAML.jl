@@ -1,4 +1,3 @@
-
 abstract type Node end
 
 mutable struct ScalarNode <: Node

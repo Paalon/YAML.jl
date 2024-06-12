@@ -1,4 +1,3 @@
-
 abstract type Event end
 
 struct StreamStartEvent <: Event

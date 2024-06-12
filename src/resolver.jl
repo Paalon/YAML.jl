@@ -1,4 +1,3 @@
-
 # TODO:
 # This is a punt for now. It does not handle any sort of custom resolving tags,
 # only matching default implicits.

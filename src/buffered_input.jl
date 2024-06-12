@@ -1,4 +1,3 @@
-
 # Simple buffered input that allows peeking an arbitrary number of characters
 # ahead by maintaining a typically quite small buffer of a few characters.
 
