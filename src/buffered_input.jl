@@ -35,7 +35,7 @@ function peek(bi::BufferedInput, i::Integer=0)
     if bi.avail < i1
         _fill(bi, i1 - bi.avail)
     end
-    bi.buffer[bi.offset + i1]
+    bi.buffer[bi.offset+i1]
 end
 
 # Return the string formed from the first n characters from the current position
@@ -45,7 +45,7 @@ function prefix(bi::BufferedInput, n::Integer=1)
     if bi.avail < n1
         _fill(bi, n1 - bi.avail)
     end
-    String(bi.buffer[bi.offset .+ (1:n)])
+    String(bi.buffer[bi.offset.+(1:n)])
 end
 
 # NOPE: This is wrong. What if n > bi.avail
