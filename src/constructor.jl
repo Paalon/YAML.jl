@@ -171,7 +171,7 @@ function flatten_mapping(node::MappingNode)
             elseif value_node isa SequenceNode
                 submerge = []
                 for subnode in value_node.value
-                    if typeof(subnode) != MappingNode
+                    if !(subnode isa MappingNode)
                         throw(
                             ConstructorError(
                                 "while constructing a mapping",
