@@ -284,9 +284,15 @@ function construct_yaml_int(constructor::Constructor, node::Node)
 
     if in(':', value)
         # TODO
-        #throw(ConstructorError(nothing, nothing,
-        #"sexagesimal integers not yet implemented", node.start_mark))
-        warn("sexagesimal integers not yet implemented. Returning String.")
+        # throw(
+        #     ConstructorError(
+        #         nothing,
+        #         nothing,
+        #         "sexagesimal integers not yet implemented",
+        #         node.start_mark,
+        #     ),
+        # )
+        @warn "sexagesimal integers not yet implemented. Returning String."
         return value
     end
 
@@ -305,9 +311,15 @@ function construct_yaml_float(constructor::Constructor, node::Node)
 
     if in(':', value)
         # TODO
-        # throw(ConstructorError(nothing, nothing,
-        #     "sexagesimal floats not yet implemented", node.start_mark))
-        warn("sexagesimal floats not yet implemented. Returning String.")
+        # throw(
+        #     ConstructorError(
+        #         nothing,
+        #         nothing,
+        #         "sexagesimal floats not yet implemented",
+        #         node.start_mark,
+        #     ),
+        # )
+        @warn "sexagesimal floats not yet implemented. Returning String."
         return value
     end
 
