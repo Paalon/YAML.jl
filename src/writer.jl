@@ -66,7 +66,7 @@ _print(io::IO, arr::AbstractVector, level::Int=0, ignore_level::Bool=false) =
 
 # print a single key-value pair
 function _print(io::IO, pair::Pair, level::Int=0, ignore_level::Bool=false)
-    key = if pair[1] === nothing
+    key = if isnothing(pair[1])
         "null" # this is what the YAML parser interprets as 'nothing'
     else
         string(pair[1]) # any useful case

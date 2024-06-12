@@ -15,7 +15,7 @@ struct ConstructorError
 end
 
 function show(io::IO, error::ConstructorError)
-    if error.context !== nothing
+    if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
     end
     print(io, error.problem, " at ", error.problem_mark)
@@ -75,14 +75,14 @@ function construct_object(constructor::Constructor, node::Node)
         node_constructor = constructor.yaml_constructors[node.tag]
     else
         for (tag_prefix, node_const) in constructor.yaml_multi_constructors
-            if tag_prefix !== nothing && startswith(node.tag, tag_prefix)
+            if !isnothing(tag_prefix) && startswith(node.tag, tag_prefix)
                 tag_suffix = node.tag[length(tag_prefix) + 1:end]
                 node_constructor = node_const
                 break
             end
         end
 
-        if node_constructor === nothing
+        if isnothing(node_constructor)
             if haskey(constructor.yaml_multi_constructors, nothing)
                 tag_suffix = node.tag
                 node_constructor = constructor.yaml_multi_constructors[nothing]
@@ -98,7 +98,7 @@ function construct_object(constructor::Constructor, node::Node)
         end
     end
 
-    if tag_suffix === nothing
+    if isnothing(tag_suffix)
         data = node_constructor(constructor, node)
     else
         data = node_constructor(constructor, tag_suffix, node)
@@ -276,7 +276,7 @@ function construct_yaml_float(constructor::Constructor, node::Node)
     end
 
     m = match(r"^([+\-]?)\.inf$", value)
-    if m !== nothing
+    if !isnothing(m)
         if m.captures[1] == "-"
             return -Inf
         else
@@ -310,7 +310,7 @@ const timestamp_pat =
 function construct_yaml_timestamp(constructor::Constructor, node::Node)
     value = construct_scalar(constructor, node)
     mat = match(timestamp_pat, value)
-    if mat === nothing
+    if isnothing(mat)
         throw(ConstructorError(nothing, nothing,
             "could not make sense of timestamp format", node.start_mark))
     end
@@ -319,7 +319,7 @@ function construct_yaml_timestamp(constructor::Constructor, node::Node)
     mn = parse(Int, mat.captures[2])
     dy = parse(Int, mat.captures[3])
 
-    if mat.captures[4] === nothing
+    if isnothing(mat.captures[4])
         return Date(yr, mn, dy)
     end
 
@@ -327,12 +327,12 @@ function construct_yaml_timestamp(constructor::Constructor, node::Node)
     m = parse(Int, mat.captures[5])
     s = parse(Int, mat.captures[6])
 
-    if mat.captures[7] === nothing
+    if isnothing(mat.captures[7])
         return DateTime(yr, mn, dy, h, m, s)
     end
 
     ms = 0
-    if mat.captures[7] !== nothing
+    if !isnothing(mat.captures[7])
         ms = mat.captures[7]
         if length(ms) > 3
             ms = ms[1:3]
@@ -343,11 +343,11 @@ function construct_yaml_timestamp(constructor::Constructor, node::Node)
     delta_hr = 0
     delta_mn = 0
 
-    if mat.captures[9] !== nothing
+    if !isnothing(mat.captures[9])
         delta_hr = parse(Int, mat.captures[9])
     end
 
-    if mat.captures[10] !== nothing
+    if !isnothing(mat.captures[10])
         delta_mn = parse(Int, mat.captures[10])
     end
 

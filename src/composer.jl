@@ -18,7 +18,7 @@ struct ComposerError
 end
 
 function show(io::IO, error::ComposerError)
-    if error.context !== nothing
+    if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
     end
     print(io, error.problem, " at ", error.problem_mark)
@@ -63,7 +63,7 @@ function handle_event(event::AliasEvent, composer)
 end
 
 handle_error(event, composer, anchor) =
-    anchor !== nothing && haskey(composer.anchors, anchor) && throw(ComposerError(
+    !isnothing(anchor) && haskey(composer.anchors, anchor) && throw(ComposerError(
                 "found duplicate anchor '$(anchor)'; first occurance",
                 composer.anchors[anchor].start_mark, "second occurence",
                 event.start_mark))
@@ -97,14 +97,14 @@ end
 
 function _compose_scalar_node(event::ScalarEvent, composer::Composer, anchor::Union{String, Nothing})
     tag = event.tag
-    if tag === nothing || tag == "!"
+    if isnothing(tag) || tag == "!"
         tag = resolve(composer.resolver, ScalarNode,
                       event.value, event.implicit)
     end
 
     node = ScalarNode(tag, event.value, event.start_mark, event.end_mark,
                       event.style)
-    if anchor !== nothing
+    if !isnothing(anchor)
         composer.anchors[anchor] = node
     end
 
@@ -123,18 +123,20 @@ end
 
 function _compose_sequence_node(start_event::SequenceStartEvent, composer, anchor)
     tag = start_event.tag
-    if tag === nothing || tag == "!"
+    if isnothing(tag) || tag == "!"
         tag = resolve(composer.resolver, SequenceNode,
                       nothing, start_event.implicit)
     end
 
     node = SequenceNode(tag, Any[], start_event.start_mark, nothing,
                         start_event.flow_style)
-    if anchor !== nothing
+    if !isnothing(anchor)
         composer.anchors[anchor] = node
     end
 
-    while (event = peek(composer.input)) !== nothing
+    while true
+        event = peek(composer.input)
+        isnothing(event) && break
         __compose_sequence_node(event, composer, node) || break
     end
 
@@ -158,14 +160,14 @@ end
 
 function _compose_mapping_node(start_event::MappingStartEvent, composer::Composer, anchor::Union{String, Nothing})
     tag = start_event.tag
-    if tag === nothing || tag == "!"
+    if isnothing(tag) || tag == "!"
         tag = resolve(composer.resolver, MappingNode,
                       nothing, start_event.implicit)
     end
 
     node = MappingNode(tag, Any[], start_event.start_mark, nothing,
                        start_event.flow_style)
-    if anchor !== nothing
+    if !isnothing(anchor)
         composer.anchors[anchor] = node
     end
 

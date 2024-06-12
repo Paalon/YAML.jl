@@ -19,7 +19,7 @@ const _dicttype = Union{Type,Function}
 
 # add a dicttype-aware version of construct_mapping to the constructors
 function _patch_constructors(more_constructors::_constructor, dicttype::_dicttype)
-    if more_constructors === nothing
+    if isnothing(more_constructors)
         more_constructors = Dict{String,Function}()
     else
         more_constructors = copy(more_constructors) # do not change the outside world
@@ -74,7 +74,7 @@ function next(it::YAMLDocIterator, state)
     return doc, nothing
 end
 
-done(it::YAMLDocIterator, state) = it.next_doc === nothing
+done(it::YAMLDocIterator, state) = isnothing(it.next_doc)
 
 # 0.7 iteration protocol:
 iterate(it::YAMLDocIterator) = next(it, start(it))

@@ -38,7 +38,7 @@ struct ScannerError <: Exception
 end
 
 function show(io::IO, error::ScannerError)
-    if error.context !== nothing
+    if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
     end
     print(io, error.problem, " at ", error.problem_mark)
@@ -233,7 +233,7 @@ function fetch_more_tokens(stream::TokenStream)
     unwind_indent(stream, stream.column)
 
     c = peek(stream.input)
-    if c == '\0' || c === nothing
+    if c == '\0' || isnothing(c)
         fetch_stream_end(stream)
     elseif c == '%' && check_directive(stream)
         fetch_directive(stream)
@@ -291,7 +291,7 @@ function next_possible_simple_key(stream::TokenStream)
     min_token_number = nothing
     for (level, key) in stream.possible_simple_keys
         key = stream.possible_simple_keys[level]
-        if min_token_number === nothing || key.token_number < min_token_number
+        if isnothing(min_token_number) || key.token_number < min_token_number
             min_token_number = key.token_number
         end
     end
@@ -392,7 +392,7 @@ end
  function check_document_end(stream::TokenStream)
      stream.column == 0 &&
      prefix(stream.input, 3) == "..." &&
-    (in(peek(stream.input, 3), whitespace) || peek(stream.input, 3) === nothing)
+    (in(peek(stream.input, 3), whitespace) || isnothing(peek(stream.input, 3)))
  end
 
 function check_block_entry(stream::TokenStream)
@@ -405,7 +405,7 @@ end
 
 function check_value(stream::TokenStream)
     cnext = peek(stream.input, 1)
-    stream.flow_level > 0 || in(cnext, whitespace) || cnext === nothing
+    stream.flow_level > 0 || in(cnext, whitespace) || isnothing(cnext)
 end
 
 function check_plain(stream::TokenStream)
@@ -1074,7 +1074,7 @@ function scan_block_scalar(stream::TokenStream, style::Char)
 
     # Determine the indentation level and go to the first non-empty line.
     min_indent = max(1, stream.indent + 1)
-    if increment === nothing
+    if isnothing(increment)
         breaks, max_indent, end_mark = scan_block_scalar_indentation(stream)
         indent = max(min_indent, max_indent)
     else
@@ -1111,7 +1111,7 @@ function scan_block_scalar(stream::TokenStream, style::Char)
 
     # Chomp the tail.
     # Chomping may be Nothing or Bool.
-    if chomping === nothing
+    if isnothing(chomping)
         push!(chunks, line_break)
     elseif chomping
         push!(chunks, line_break)
@@ -1411,9 +1411,9 @@ function scan_plain(stream::TokenStream)
             c = peek(stream.input, length)
             cnext = peek(stream.input, length + 1)
             if in(c, whitespace) ||
-                c === nothing ||
+                isnothing(c) ||
                 (stream.flow_level == 0 && c == ':' &&
-                    (cnext === nothing || in(cnext, whitespace))) ||
+                    (isnothing(cnext) || in(cnext, whitespace))) ||
                 (stream.flow_level != 0 && in(c, ",:?[]{}"))
                 break
             end

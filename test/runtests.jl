@@ -287,7 +287,7 @@ test: 3
     @test equivalent(val, Dict("test" => 2))
     (val, state) = iterate(iterable, state)
     @test equivalent(val, Dict("test" => 3))
-    @test iterate(iterable, state) === nothing
+    @test isnothing(iterate(iterable, state))
 end
 
 # test that an OrderedDict is written in the correct order
@@ -324,7 +324,7 @@ const dicttypes = [
         @warn "Test of OrderedDict might not be discriminative: the order is also correct in $dicttype"
     end
     if dicttype <: DefaultDict
-        @test data[""] === missing
+        @test ismissing(data[""])
     end
 end
 

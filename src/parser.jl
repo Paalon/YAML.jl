@@ -19,7 +19,7 @@ struct ParserError
 end
 
 function show(io::IO, error::ParserError)
-    if error.context !== nothing
+    if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
     end
     print(io, error.problem, " at ", error.problem_mark)
@@ -44,10 +44,10 @@ end
 
 
 function peek(stream::EventStream)
-    if stream.next_event === nothing
-        if stream.state === nothing
+    if isnothing(stream.next_event)
+        if isnothing(stream.state)
             return nothing
-        elseif stream.end_of_stream !== nothing
+        elseif !isnothing(stream.end_of_stream)
             stream.state = nothing
             return stream.end_of_stream
         else
@@ -63,10 +63,10 @@ end
 
 
 function forward!(stream::EventStream)
-    if stream.next_event === nothing
-        if stream.state === nothing
+    if isnothing(stream.next_event)
+        if isnothing(stream.state)
             nothing
-        elseif stream.end_of_stream !== nothing
+        elseif !isnothing(stream.end_of_stream)
             stream.state = nothing
             return stream.end_of_stream
         else
@@ -86,7 +86,7 @@ function process_directives(stream::EventStream)
     while typeof(peek(stream.input)) == DirectiveToken
         token = forward!(stream.input)
         if token.name == "YAML"
-            if stream.yaml_version !== nothing
+            if !isnothing(stream.yaml_version)
                 throw(ParserError(nothing, nothing,
                                   "found duplicate YAML directive",
                                   token.start_mark))
@@ -108,7 +108,7 @@ function process_directives(stream::EventStream)
         end
     end
 
-    if stream.tag_handles !== nothing
+    if !isnothing(stream.tag_handles)
         value = stream.yaml_version, copy(stream.tag_handles)
     else
         value = stream.yaml_version, nothing
@@ -248,9 +248,9 @@ end
 function __parse_node(token::ScalarToken, stream::EventStream, block, start_mark, end_mark, anchor, tag, implicit)
     forward!(stream.input)
     end_mark = token.span.end_mark
-    if (token.plain && tag === nothing) || tag == "!"
+    if (token.plain && isnothing(tag)) || tag == "!"
         implicit = true, false
-    elseif tag === nothing
+    elseif isnothing(tag)
         implicit = false, true
     else
         implicit = false, false
@@ -291,7 +291,7 @@ function __parse_node(token::BlockMappingStartToken, stream::EventStream, block,
 end
 
 function __parse_node(token, stream::EventStream, block, start_mark, end_mark, anchor, tag, implicit)
-    if anchor !== nothing || tag !== nothing
+    if !isnothing(anchor) || !isnothing(tag)
         stream.state = pop!(stream.states)
         return ScalarEvent(start_mark, end_mark, anchor, tag,
                             (implicit, false), "", nothing)
@@ -332,9 +332,9 @@ function _parse_node(token, stream::EventStream, block, indentless_sequence)
         end
     end
 
-    if tag !== nothing
+    if !isnothing(tag)
         handle, suffix = tag
-        if handle !== nothing
+        if !isnothing(handle)
             if !haskey(stream.tag_handles, handle)
                 throw(ParserError("while parsing a node", start_mark,
                                   "found undefined tag handle $(handle)",
@@ -347,12 +347,12 @@ function _parse_node(token, stream::EventStream, block, indentless_sequence)
     end
 
     token = peek(stream.input)
-    if start_mark === nothing
+    if isnothing(start_mark)
         start_mark = end_mark = token.span.start_mark
     end
 
     event = nothing
-    implicit = tag === nothing || tag == "!"
+    implicit = isnothing(tag) || tag == "!"
     if indentless_sequence && typeof(token) == BlockEntryToken
         end_mark = token.span.end_mark
         stream.state = parse_indentless_sequence_entry
