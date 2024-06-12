@@ -1,5 +1,3 @@
-include("events.jl")
-
 const DEFAULT_TAGS = Dict{String, String}("!" => "!", "!!" => "tag:yaml.org,2002:")
 
 struct ParserError
