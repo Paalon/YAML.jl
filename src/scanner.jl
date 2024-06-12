@@ -8,9 +8,7 @@ struct Mark
     column::UInt64
 end
 
-function show(io::IO, mark::Mark)
-    @printf(io, "line %d, column %d", mark.line, mark.column)
-end
+show(io::IO, mark::Mark) = @printf(io, "line %d, column %d", mark.line, mark.column)
 
 # Where in the stream a particular token lies.
 struct Span
@@ -35,8 +33,9 @@ end
 function show(io::IO, error::ScannerError)
     if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
+    else
+        print(io, error.problem, " at ", error.problem_mark)
     end
-    print(io, error.problem, " at ", error.problem_mark)
 end
 
 include("tokens.jl")

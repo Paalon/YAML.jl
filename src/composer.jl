@@ -22,8 +22,9 @@ end
 function show(io::IO, error::ComposerError)
     if !isnothing(error.context)
         print(io, error.context, " at ", error.context_mark, ": ")
+    else
+        print(io, error.problem, " at ", error.problem_mark)
     end
-    print(io, error.problem, " at ", error.problem_mark)
 end
 
 mutable struct Composer
