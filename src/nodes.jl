@@ -1,5 +1,13 @@
 
-abstract type Node end
+abstract type Node
+    # tag::String
+    # value::Vector
+    # start_mark::Union{Mark, Nothing}
+    # end_mark::Union{Mark, Nothing}
+end
+
+firstmark(node::Node) = node.start_mark
+lastmark(node::Node) = node.end_mark
 
 mutable struct ScalarNode <: Node
     tag::String

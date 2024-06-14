@@ -1,5 +1,11 @@
 
-abstract type Event end
+abstract type Event
+    # start_mark::Mark
+    # end_mark::Mark
+end
+
+firstmark(event::Event) = event.start_mark
+lastmark(event::Event) = event.end_mark
 
 struct StreamStartEvent <: Event
     start_mark::Mark
