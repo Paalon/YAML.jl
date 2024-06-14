@@ -65,7 +65,7 @@ function construct_object(constructor::Constructor, node::Node)
     if in(node, constructor.recursive_objects)
         throw(ConstructorError(nothing, nothing,
                                "found unconstructable recursive node",
-                               node.start_mark))
+                               firstmark(node)))
     end
 
     push!(constructor.recursive_objects, node)
@@ -117,7 +117,7 @@ function construct_scalar(constructor::Constructor, node::Node)
     if !(node isa ScalarNode)
         throw(ConstructorError(nothing, nothing,
                                "expected a scalar node, but found $(typeof(node))",
-                               node.start_mark))
+                               firstmark(node)))
     end
     node.value
 end
@@ -127,7 +127,7 @@ function construct_sequence(constructor::Constructor, node::Node)
     if !(node isa SequenceNode)
         throw(ConstructorError(nothing, nothing,
                                "expected a sequence node, but found $(typeof(node))",
-                               node.start_mark))
+                               firstmark(node)))
     end
 
     [construct_object(constructor, child) for child in node.value]
@@ -149,9 +149,9 @@ function flatten_mapping(node::MappingNode)
                 for subnode in value_node.value
                     if !(subnode isa MappingNode)
                         throw(ConstructorError("while constructing a mapping",
-                                               node.start_mark,
+                                               firstmark(node),
                                                "expected a mapping node, but found $(typeof(subnode))",
-                                               subnode.start_mark))
+                                               firstmark(subnode)))
                     end
                     flatten_mapping(subnode)
                     push!(submerge, subnode.value)
@@ -186,7 +186,7 @@ function construct_mapping(dicttype::Union{Type,Function}, constructor::Construc
             catch
                 throw(ConstructorError(nothing, nothing,
                                        "Cannot cast $key to the key type of $dicttype",
-                                       node.start_mark))
+                                       firstmark(node)))
             end
         end
         try
@@ -194,7 +194,7 @@ function construct_mapping(dicttype::Union{Type,Function}, constructor::Construc
         catch
             throw(ConstructorError(nothing, nothing,
                                    "Cannot store $key=>$value in $dicttype",
-                                   node.start_mark))
+                                   firstmark(node)))
         end
     end
     mapping
@@ -244,7 +244,7 @@ function construct_yaml_int(constructor::Constructor, node::Node)
     if in(':', value)
         # TODO
         #throw(ConstructorError(nothing, nothing,
-            #"sexagesimal integers not yet implemented", node.start_mark))
+            #"sexagesimal integers not yet implemented", firstmark(node)))
         @warn "sexagesimal integers not yet implemented. Returning String."
         return value
     end
@@ -266,7 +266,7 @@ function construct_yaml_float(constructor::Constructor, node::Node)
     if in(':', value)
         # TODO
         # throw(ConstructorError(nothing, nothing,
-        #     "sexagesimal floats not yet implemented", node.start_mark))
+        #     "sexagesimal floats not yet implemented", firstmark(node)))
         @warn "sexagesimal floats not yet implemented. Returning String."
         return value
     end
@@ -312,7 +312,7 @@ function construct_yaml_timestamp(constructor::Constructor, node::Node)
     mat = match(timestamp_pat, value)
     if mat === nothing
         throw(ConstructorError(nothing, nothing,
-            "could not make sense of timestamp format", node.start_mark))
+            "could not make sense of timestamp format", firstmark(node)))
     end
 
     yr = parse(Int, mat.captures[1])
@@ -360,19 +360,19 @@ end
 
 function construct_yaml_omap(constructor::Constructor, node::Node)
     throw(ConstructorError(nothing, nothing,
-        "omap type not yet implemented", node.start_mark))
+        "omap type not yet implemented", firstmark(node)))
 end
 
 
 function construct_yaml_pairs(constructor::Constructor, node::Node)
     throw(ConstructorError(nothing, nothing,
-        "pairs type not yet implemented", node.start_mark))
+        "pairs type not yet implemented", firstmark(node)))
 end
 
 
 function construct_yaml_set(constructor::Constructor, node::Node)
     throw(ConstructorError(nothing, nothing,
-        "set type not yet implemented", node.start_mark))
+        "set type not yet implemented", firstmark(node)))
 end
 
 
@@ -393,14 +393,14 @@ end
 
 function construct_yaml_object(constructor::Constructor, node::Node)
     throw(ConstructorError(nothing, nothing,
-        "object type not yet implemented", node.start_mark))
+        "object type not yet implemented", firstmark(node)))
 end
 
 
 function construct_undefined(constructor::Constructor, node::Node)
     throw(ConstructorError(nothing, nothing,
         "could not determine a constructor for the tag '$(node.tag)'",
-        node.start_mark))
+        firstmark(node)))
 end
 
 

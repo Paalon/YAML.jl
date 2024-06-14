@@ -52,15 +52,15 @@ function handle_event(event::AliasEvent, composer::Composer)
     anchor = event.anchor
     forward!(composer.input)
     haskey(composer.anchors, anchor) || throw(ComposerError(
-            nothing, nothing, "found undefined alias '$(anchor)'", event.start_mark))
+            nothing, nothing, "found undefined alias '$(anchor)'", firstmark(event)))
     return composer.anchors[anchor]
 end
 
 handle_error(event::Event, composer::Composer, anchor::Union{String, Nothing}) =
     anchor !== nothing && haskey(composer.anchors, anchor) && throw(ComposerError(
                 "found duplicate anchor '$(anchor)'; first occurance",
-                composer.anchors[anchor].start_mark, "second occurence",
-                event.start_mark))
+                firstmark(composer.anchors[anchor]), "second occurence",
+                firstmark(event)))
 
 function handle_event(event::ScalarEvent, composer::Composer)
     anchor = event.anchor
@@ -95,7 +95,7 @@ function _compose_scalar_node(event::ScalarEvent, composer::Composer, anchor::Un
                       event.value, event.implicit)
     end
 
-    node = ScalarNode(tag, event.value, event.start_mark, event.end_mark,
+    node = ScalarNode(tag, event.value, firstmark(event), lastmark(event),
                       event.style)
     if anchor !== nothing
         composer.anchors[anchor] = node
@@ -120,7 +120,7 @@ function _compose_sequence_node(start_event::SequenceStartEvent, composer::Compo
                       nothing, start_event.implicit)
     end
 
-    node = SequenceNode(tag, Any[], start_event.start_mark, nothing,
+    node = SequenceNode(tag, Any[], firstmark(start_event), nothing,
                         start_event.flow_style)
     if anchor !== nothing
         composer.anchors[anchor] = node
@@ -133,7 +133,7 @@ function _compose_sequence_node(start_event::SequenceStartEvent, composer::Compo
     end
 
     end_event = forward!(composer.input)
-    node.end_mark = end_event.end_mark
+    node.end_mark = lastmark(end_event)
 
     node
 end
@@ -156,7 +156,7 @@ function _compose_mapping_node(start_event::MappingStartEvent, composer::Compose
                       nothing, start_event.implicit)
     end
 
-    node = MappingNode(tag, Any[], start_event.start_mark, nothing,
+    node = MappingNode(tag, Any[], firstmark(start_event), nothing,
                        start_event.flow_style)
     if anchor !== nothing
         composer.anchors[anchor] = node
@@ -168,7 +168,7 @@ function _compose_mapping_node(start_event::MappingStartEvent, composer::Compose
     end
 
     end_event = forward!(composer.input)
-    node.end_mark = end_event.end_mark
+    node.end_mark = lastmark(end_event)
 
     node
 end

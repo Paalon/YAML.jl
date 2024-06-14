@@ -355,7 +355,7 @@ end
         YAML.add_multi_constructor!(ret, nothing) do constructor::YAML.Constructor, tag, node
             throw(YAML.ConstructorError(nothing, nothing,
                 "could not determine a constructor for the tag '$(tag)'",
-                node.start_mark))
+                YAML.firstmark(node)))
         end
         ret
     end
