@@ -841,13 +841,13 @@ function yaml_1_2_scan_line_break(stream::TokenStream)::String
     c = peek(stream.input)
     if c == '\u000d'
         if peek(stream.input, 1) == '\u000a'
-            yaml_1_1_forwardchars!(stream, 2)
+            yaml_1_2_forwardchars!(stream, 2)
         else
-            yaml_1_1_forwardchars!(stream)
+            yaml_1_2_forwardchars!(stream)
         end
         "\u000a"
     elseif c == '\u000a'
-        yaml_1_1_forwardchars!(stream)
+        yaml_1_2_forwardchars!(stream)
         "\u000a"
     else
         ""
