@@ -1,6 +1,9 @@
 # [27] b-char ::= b-line-feed | b-carriage-return | b-next-line | b-line-separator | b-paragraph-separator
 yaml_1_1_is_b_char(c::Char) = c == '\n' || c == '\r' || c == '\u85' || c == '\u2028' || c == '\u2029'
 
+# [41] ns-ascii-letter ::= [#x41-#x5A] /*A-Z*/ | [#61-#x7A] /*a-z*/
+yaml_1_1_is_ns_ascii_letter(c::Char) = 'A' ≤ c ≤ 'Z' || 'a' ≤ c ≤ 'z'
+
 struct SimpleKey
     token_number::UInt64
     required::Bool
@@ -758,9 +761,6 @@ end
 
 # Scanners
 # --------
-
-# [41] ns-ascii-letter ::= [#x41-#x5A] /*A-Z*/ | [#61-#x7A] /*a-z*/
-yaml_1_1_is_ns_ascii_letter(c::Char) = 'A' ≤ c ≤ 'Z' || 'a' ≤ c ≤ 'z'
 
 # If the stream is at a line break, advance past it.
 #
