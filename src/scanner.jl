@@ -894,19 +894,43 @@ function scan_yaml_directive_value(stream::TokenStream, start_mark::Mark)
 end
 
 
-function scan_yaml_directive_number(stream::TokenStream, start_mark::Mark)
-    if !isdigit(peekchar(stream))
-        throw(ScannerError("while scanning a directive", start_mark,
-                           "expected a digit, but found '$(peekchar(stream))'",
-                           get_mark(stream)))
+# scan the YAML directive's number from a stream
+function scan_yaml_directive_number(stream::TokenStream, start_mark::Mark)::Int
+    # -------------------------------------------------
+    # check that the first character is a decimal digit
+    # -------------------------------------------------
+    # the current position of the character in the stream
+    pos = 0
+    # the current character
+    c = peekchar(stream, pos)
+    # throw an error if the input is not decimal digits
+    isdigit(c) || throw(ScannerError(
+        "while scanning a directive", start_mark,
+        "expected a digit, but found '$c'", get_mark(stream),
+    ))
+    # -----------------------------------------------------------
+    # until the end of the decimal digits, increment the position
+    # -----------------------------------------------------------
+    while true
+        pos += 1
+        c = peekchar(stream, pos)
+        isdigit(c) || break
     end
-    length = 0
-    while isdigit(peekchar(stream, length))
-        length += 1
-    end
-    value = parse(Int, prefix(stream.input, length))
-    forwardchars!(stream, length)
-    value
+    # ------------------------------
+    # get the decimal digit as `Int`
+    # ------------------------------
+    # the decimal digit as a `String`
+    str = prefix(stream.input, pos)
+    # the decimal digit as an `Int`
+    n = parse(Int, str)
+    # ---------------------------------------------------
+    # advance the stream by the length that has been read
+    # ---------------------------------------------------
+    forwardchars!(stream, pos)
+    # -----------------
+    # return the number
+    # -----------------
+    n
 end
 
 
