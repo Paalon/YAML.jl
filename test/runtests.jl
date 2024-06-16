@@ -157,7 +157,7 @@ function write_and_load(data::Any)
     path = Filesystem.tempname() * ".yml" # path to a temporary file
     try
         YAML.write_file(path, data)
-        return YAML.load_file(path, more_constructors)
+        return YAML.parsefirstfile(path, more_constructors)
     finally
         Filesystem.rm(path, force=true)
     end
@@ -172,14 +172,14 @@ const testdir = dirname(@__FILE__)
 
     @testset "Load from File" begin
         @test begin
-            data = YAML.load_file(
+            data = YAML.parsefirstfile(
                 joinpath(testdir, string(test, ".data")),
                 TestConstructor()
             )
             equivalent(data, expected)
         end
         @test begin
-            dictData = YAML.load_file(
+            dictData = YAML.parsefirstfile(
                 joinpath(testdir, string(test, ".data")),
                 more_constructors, multi_constructors
             )
@@ -189,7 +189,7 @@ const testdir = dirname(@__FILE__)
 
     @testset "Load from String" begin
         @test begin
-            data = YAML.load(
+            data = YAML.parsefirst(
                 yamlString,
                 TestConstructor()
             )
@@ -197,7 +197,7 @@ const testdir = dirname(@__FILE__)
         end
 
         @test begin
-            dictData = YAML.load(
+            dictData = YAML.parsefirst(
                 yamlString,
                 more_constructors, multi_constructors
             )
@@ -207,7 +207,7 @@ const testdir = dirname(@__FILE__)
 
     @testset "Load All from File" begin
         @test begin
-            data = YAML.load_all_file(
+            data = YAML.parsefile(
                 joinpath(testdir, string(test, ".data")),
                 TestConstructor()
             )
@@ -215,7 +215,7 @@ const testdir = dirname(@__FILE__)
         end
 
         @test begin
-            dictData = YAML.load_all_file(
+            dictData = YAML.parsefile(
                 joinpath(testdir, string(test, ".data")),
                 more_constructors, multi_constructors
             )
@@ -225,7 +225,7 @@ const testdir = dirname(@__FILE__)
 
     @testset "Load All from String" begin
         @test begin
-            data = YAML.load_all(
+            data = YAML.parse(
                 yamlString,
                 TestConstructor()
             )
@@ -233,7 +233,7 @@ const testdir = dirname(@__FILE__)
         end
 
         @test begin
-            dictData = YAML.load_all(
+            dictData = YAML.parse(
                 yamlString,
                 more_constructors, multi_constructors
             )
@@ -245,7 +245,7 @@ const testdir = dirname(@__FILE__)
     if !in(test, test_write_ignored)
         @testset "Writing" begin
             @test begin
-                data = YAML.load_file(
+                data = YAML.parsefirstfile(
                     joinpath(testdir, string(test, ".data")),
                     more_constructors
                 )
@@ -263,16 +263,16 @@ const encodings = [
 @testset for encoding in encodings
     data = encode("test", encoding)
     @test YAML.detect_encoding(IOBuffer(data)) == encoding
-    @test YAML.load(IOBuffer(data)) == "test"
+    @test YAML.parsefirst(IOBuffer(data)) == "test"
 
     #with explicit BOM
     data = encode("\uFEFFtest", encoding)
     @test YAML.detect_encoding(IOBuffer(data)) == encoding
-    @test YAML.load(IOBuffer(data)) == "test"
+    @test YAML.parsefirst(IOBuffer(data)) == "test"
 end
 
 @testset "multi_doc_bom" begin
-    iterable = YAML.load_all("""
+    iterable = YAML.parse("""
 \ufeff---\r
 test: 1
 \ufeff---
@@ -303,7 +303,7 @@ const dicttypes = [
     () -> DefaultDict{String,Any}(Missing),
 ]
 @testset for dicttype in dicttypes
-    data = YAML.load_file(
+    data = YAML.parsefirstfile(
         joinpath(testdir, "nested-dicts.data"),
         more_constructors;
         dicttype=dicttype
@@ -333,7 +333,7 @@ const test_errors = [
 ]
 
 @testset "YAML Errors" "error test = $test" for test in test_errors
-    @test_throws YAML.ConstructorError YAML.load_file(
+    @test_throws YAML.ConstructorError YAML.parsefirstfile(
         joinpath(testdir, string(test, ".data")),
         TestConstructor()
     )
@@ -371,8 +371,8 @@ end
 
     expected = Dict{Any,Any}("Test" => Dict{Any,Any}("test2"=>["test1", "test2"],"test1"=>"data"))
 
-    @test equivalent(YAML.load(yamlString, MySafeConstructor()), expected)
-    @test_throws YAML.ConstructorError YAML.load(
+    @test equivalent(YAML.parsefirst(yamlString, MySafeConstructor()), expected)
+    @test_throws YAML.ConstructorError YAML.parsefirst(
         yamlString,
         MyReallySafeConstructor()
     )
@@ -380,25 +380,25 @@ end
 
 
 # also check that things break correctly
-@test_throws YAML.ConstructorError YAML.load_file(
+@test_throws YAML.ConstructorError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
     dicttype=Dict{Float64,Any}
 )
 
-@test_throws YAML.ConstructorError YAML.load_file(
+@test_throws YAML.ConstructorError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
     dicttype=Dict{Any,Float64}
 )
 
-@test_throws ArgumentError YAML.load_file(
+@test_throws ArgumentError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
     dicttype=(mistaken_argument) -> DefaultDict{String,Any}(mistaken_argument)
 )
 
-@test_throws ArgumentError YAML.load_file(
+@test_throws ArgumentError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
     dicttype=() -> 3.0 # wrong type
@@ -409,50 +409,50 @@ dict_content = ["key1" => [Dict("subkey1" => "subvalue1", "subkey2" => "subvalue
 order_one = OrderedDict(dict_content...)
 order_two = OrderedDict(dict_content[[2,1]]...) # reverse order
 @test YAML.yaml(order_one) != YAML.yaml(order_two)
-@test YAML.load(YAML.yaml(order_one)) == YAML.load(YAML.yaml(order_two))
+@test YAML.parsefirst(YAML.yaml(order_one)) == YAML.parsefirst(YAML.yaml(order_two))
 
 # issue 89 - quotes in strings
-@test YAML.load(YAML.yaml(Dict("a" => """a "quoted" string""")))["a"] == """a "quoted" string"""
-@test YAML.load(YAML.yaml(Dict("a" => """a \\"quoted\\" string""")))["a"] == """a \\"quoted\\" string"""
+@test YAML.parsefirst(YAML.yaml(Dict("a" => """a "quoted" string""")))["a"] == """a "quoted" string"""
+@test YAML.parsefirst(YAML.yaml(Dict("a" => """a \\"quoted\\" string""")))["a"] == """a \\"quoted\\" string"""
 
 # issue 108 - dollar signs in single-line strings
 @test YAML.yaml("foo \$ bar") == "\"foo \$ bar\"\n"
 
-@test YAML.load(YAML.yaml(Dict("a" => "")))["a"] == ""
-@test YAML.load(YAML.yaml(Dict("a" => "nl at end\n")))["a"] == "nl at end\n"
-@test YAML.load(YAML.yaml(Dict("a" => "one\nnl\n")))["a"] == "one\nnl\n"
-@test YAML.load(YAML.yaml(Dict("a" => "many\nnls\n\n\n")))["a"] == "many\nnls\n\n\n"
-@test YAML.load(YAML.yaml(Dict("a" => "no\ntrailing\nnls")))["a"] == "no\ntrailing\nnls"
-@test YAML.load(YAML.yaml(Dict("a" => "foo\n\"bar\\'")))["a"] == "foo\n\"bar\\'"
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "")))["a"] == ""
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "nl at end\n")))["a"] == "nl at end\n"
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "one\nnl\n")))["a"] == "one\nnl\n"
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "many\nnls\n\n\n")))["a"] == "many\nnls\n\n\n"
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "no\ntrailing\nnls")))["a"] == "no\ntrailing\nnls"
+@test YAML.parsefirst(YAML.yaml(Dict("a" => "foo\n\"bar\\'")))["a"] == "foo\n\"bar\\'"
 
-@test YAML.load(YAML.yaml(Dict("a" => Dict()))) == Dict("a" => Dict())
-@test YAML.load(YAML.yaml(Dict("a" => []))) == Dict("a" => [])
+@test YAML.parsefirst(YAML.yaml(Dict("a" => Dict()))) == Dict("a" => Dict())
+@test YAML.parsefirst(YAML.yaml(Dict("a" => []))) == Dict("a" => [])
 
 # issue 114 - gracefully handle extra commas in flow collections
 @testset "issue114" begin
-    @test YAML.load("[3,4,]") == [3,4]
-    @test YAML.load("{a:4,b:5,}") == Dict("a" => 4, "b" => 5)
-    @test YAML.load("[?a:4, ?b:5]") == [Dict("a" => 4), Dict("b" => 5)]
-    @test_throws YAML.ParserError YAML.load("[3,,4]")
-    @test_throws YAML.ParserError YAML.load("{a: 3,,b:3}")
+    @test YAML.parsefirst("[3,4,]") == [3,4]
+    @test YAML.parsefirst("{a:4,b:5,}") == Dict("a" => 4, "b" => 5)
+    @test YAML.parsefirst("[?a:4, ?b:5]") == [Dict("a" => 4), Dict("b" => 5)]
+    @test_throws YAML.ParserError YAML.parsefirst("[3,,4]")
+    @test_throws YAML.ParserError YAML.parsefirst("{a: 3,,b:3}")
 end
 
 @testset "issue 125 (test_throw)" begin
-    @test_throws YAML.ScannerError YAML.load(""" ''' """)
-    @test_throws YAML.ScannerError YAML.load(""" ''''' """)
-    @test_throws YAML.ParserError YAML.load(""" ''a'' """)
-    @test_throws YAML.ScannerError YAML.load(""" '''a'' """)
+    @test_throws YAML.ScannerError YAML.parsefirst(""" ''' """)
+    @test_throws YAML.ScannerError YAML.parsefirst(""" ''''' """)
+    @test_throws YAML.ParserError YAML.parsefirst(""" ''a'' """)
+    @test_throws YAML.ScannerError YAML.parsefirst(""" '''a'' """)
 end
 
 # issue #148 - warn unknown directives
 @testset "issue #148" begin
-    @test (@test_logs (:warn, """unknown directive name: "FOO" at line 1, column 4. We ignore this.""") YAML.load("""%FOO  bar baz\n\n--- "foo\"""")) == "foo"
-    @test (@test_logs (:warn, """unknown directive name: "FOO" at line 1, column 4. We ignore this.""") (:warn, """unknown directive name: "BAR" at line 2, column 4. We ignore this.""") YAML.load("""%FOO\n%BAR\n--- foo""")) == "foo"
+    @test (@test_logs (:warn, """unknown directive name: "FOO" at line 1, column 4. We ignore this.""") YAML.parsefirst("""%FOO  bar baz\n\n--- "foo\"""")) == "foo"
+    @test (@test_logs (:warn, """unknown directive name: "FOO" at line 1, column 4. We ignore this.""") (:warn, """unknown directive name: "BAR" at line 2, column 4. We ignore this.""") YAML.parsefirst("""%FOO\n%BAR\n--- foo""")) == "foo"
 end
 
 # issue #144
 @testset "issue #144" begin
-    @test YAML.load("---") === nothing
+    @test YAML.parsefirst("---") === nothing
 end
 
 @testset "failsafe schema" begin
