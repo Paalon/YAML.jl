@@ -41,8 +41,8 @@ include("composer.jl")
 include("constructor.jl")
 include("writer.jl")
 
-const _constructor = Union{Nothing, Dict}
-const _dicttype = Union{Type,Function}
+const _constructor = Union{Dict, Nothing}
+const _dicttype = Union{Type, Function}
 
 # add a dicttype-aware version of construct_mapping to the constructors
 function _patch_constructors(more_constructors::_constructor, dicttype::_dicttype)
