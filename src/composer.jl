@@ -1,3 +1,6 @@
+import Base: getindex, setindex!, haskey
+
+# error for composer
 
 struct ComposerError <: Exception
     context::Union{String, Nothing}
@@ -20,6 +23,7 @@ function show(io::IO, error::ComposerError)
     print(io, error.problem, " at ", error.problem_mark)
 end
 
+# composer
 
 mutable struct Composer
     input::EventStream
@@ -27,40 +31,59 @@ mutable struct Composer
     resolver::Resolver
 end
 
+peek(composer::Composer) = peek(composer.input)
+
+forward!(composer::Composer) = forward!(composer.input)
+
+getindex(composer::Composer, anchor::String) = composer.anchors[anchor]
+
+setindex!(composer::Composer, node::Node, anchor::String) = composer.anchors[anchor] = node
+
+haskey(composer::Composer, anchor::Union{String, Nothing}) = haskey(composer.anchors, anchor)
+
+# compose
+
 function compose(events::EventStream)
     composer = Composer(events, Dict{String, Node}(), Resolver())
-    @assert forward!(composer.input) isa StreamStartEvent
+    @assert forward!(composer) isa StreamStartEvent
     node = compose_document(composer)
-    if peek(composer.input) isa StreamEndEvent
-        forward!(composer.input)
+    if peek(composer) isa StreamEndEvent
+        forward!(composer)
     else
-        @assert peek(composer.input) isa DocumentStartEvent
+        @assert peek(composer) isa DocumentStartEvent
     end
     node
 end
 
+# compose document
 
 function compose_document(composer::Composer)
-    @assert forward!(composer.input) isa DocumentStartEvent
+    @assert forward!(composer) isa DocumentStartEvent
     node = compose_node(composer)
-    @assert forward!(composer.input) isa DocumentEndEvent
+    @assert forward!(composer) isa DocumentEndEvent
     empty!(composer.anchors)
     node
 end
 
-function handle_event(event::AliasEvent, composer::Composer)
-    anchor = event.anchor
-    forward!(composer.input)
-    haskey(composer.anchors, anchor) || throw(ComposerError(
-            nothing, nothing, "found undefined alias '$(anchor)'", firstmark(event)))
-    return composer.anchors[anchor]
-end
+# handle error
 
 handle_error(event::Event, composer::Composer, anchor::Union{String, Nothing}) =
-    anchor !== nothing && haskey(composer.anchors, anchor) && throw(ComposerError(
-                "found duplicate anchor '$(anchor)'; first occurance",
-                firstmark(composer.anchors[anchor]), "second occurence",
-                firstmark(event)))
+    anchor !== nothing && haskey(composer, anchor) && throw(ComposerError(
+        "found duplicate anchor '$anchor'; first occurance", firstmark(composer[anchor]),
+        "second occurence", firstmark(event),
+    ))
+
+# handle event
+
+function handle_event(event::AliasEvent, composer::Composer)
+    anchor = event.anchor
+    forward!(composer)
+    haskey(composer, anchor) || throw(ComposerError(
+        nothing, nothing,
+        "found undefined alias '$anchor'", firstmark(event),
+    ))
+    composer[anchor]
+end
 
 function handle_event(event::ScalarEvent, composer::Composer)
     anchor = event.anchor
@@ -82,32 +105,36 @@ end
 
 handle_event(event::Event, composer::Composer) = nothing
 
+# compose node
+
 function compose_node(composer::Composer)
-    event = peek(composer.input)
+    event = peek(composer)
     handle_event(event, composer)
 end
 
+# compose scalar node
 
 function _compose_scalar_node(event::ScalarEvent, composer::Composer, anchor::Union{String, Nothing})
     tag = event.tag
     if tag === nothing || tag == "!"
-        tag = resolve(composer.resolver, ScalarNode,
-                      event.value, event.implicit)
+        tag = resolve(composer.resolver, ScalarNode, event.value, event.implicit)
     end
 
-    node = ScalarNode(tag, event.value, firstmark(event), lastmark(event),
-                      event.style)
+    node = ScalarNode(tag, event.value, firstmark(event), lastmark(event), event.style)
     if anchor !== nothing
-        composer.anchors[anchor] = node
+        composer[anchor] = node
     end
 
     node
 end
 
 compose_scalar_node(composer::Composer, anchor::Union{String, Nothing}) =
-    _compose_scalar_node(forward!(composer.input), composer, anchor)
+    _compose_scalar_node(forward!(composer), composer, anchor)
+
+# compose sequence node
 
 __compose_sequence_node(event::SequenceEndEvent, composer::Composer, node::Node) = false
+
 function __compose_sequence_node(event::Event, composer, node)
     push!(node.value, compose_node(composer))
     true
@@ -116,32 +143,33 @@ end
 function _compose_sequence_node(start_event::SequenceStartEvent, composer::Composer, anchor::Union{String, Nothing})
     tag = start_event.tag
     if tag === nothing || tag == "!"
-        tag = resolve(composer.resolver, SequenceNode,
-                      nothing, start_event.implicit)
+        tag = resolve(composer.resolver, SequenceNode, nothing, start_event.implicit)
     end
 
-    node = SequenceNode(tag, Any[], firstmark(start_event), nothing,
-                        start_event.flow_style)
+    node = SequenceNode(tag, Any[], firstmark(start_event), nothing, start_event.flow_style)
     if anchor !== nothing
-        composer.anchors[anchor] = node
+        composer[anchor] = node
     end
 
     while true
-        event = peek(composer.input)
+        event = peek(composer)
         event === nothing && break
         __compose_sequence_node(event, composer, node) || break
     end
 
-    end_event = forward!(composer.input)
+    end_event = forward!(composer)
     node.end_mark = lastmark(end_event)
 
     node
 end
 
 compose_sequence_node(composer::Composer, anchor::Union{String, Nothing}) =
-    _compose_sequence_node(forward!(composer.input), composer, anchor)
+    _compose_sequence_node(forward!(composer), composer, anchor)
+
+# compose mapping node
 
 __compose_mapping_node(event::MappingEndEvent, composer::Composer, node::Node) = false
+
 function __compose_mapping_node(event::Event, composer::Composer, node::Node)
     item_key = compose_node(composer)
     item_value = compose_node(composer)
@@ -152,26 +180,24 @@ end
 function _compose_mapping_node(start_event::MappingStartEvent, composer::Composer, anchor::Union{String, Nothing})
     tag = start_event.tag
     if tag === nothing || tag == "!"
-        tag = resolve(composer.resolver, MappingNode,
-                      nothing, start_event.implicit)
+        tag = resolve(composer.resolver, MappingNode, nothing, start_event.implicit)
     end
 
-    node = MappingNode(tag, Any[], firstmark(start_event), nothing,
-                       start_event.flow_style)
+    node = MappingNode(tag, Any[], firstmark(start_event), nothing, start_event.flow_style)
     if anchor !== nothing
-        composer.anchors[anchor] = node
+        composer[anchor] = node
     end
 
     while true
-        event = peek(composer.input)
+        event = peek(composer)
         __compose_mapping_node(event, composer, node) || break
     end
 
-    end_event = forward!(composer.input)
+    end_event = forward!(composer)
     node.end_mark = lastmark(end_event)
 
     node
 end
 
 compose_mapping_node(composer::Composer, anchor::Union{String, Nothing}) =
-    _compose_mapping_node(forward!(composer.input), composer, anchor)
+    _compose_mapping_node(forward!(composer), composer, anchor)
