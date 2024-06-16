@@ -8,13 +8,11 @@ struct ComposerError <: Exception
     problem::Union{String, Nothing}
     problem_mark::Union{Mark, Nothing}
     note::Union{String, Nothing}
-
-    function ComposerError(context=nothing, context_mark=nothing,
-                           problem=nothing, problem_mark=nothing,
-                           note=nothing)
-        new(context, context_mark, problem, problem_mark, note)
-    end
 end
+
+ComposerError(context::Union{String, Nothing}, context_mark::Union{Mark, Nothing}, problem::Union{String, Nothing}, problem_mark::Union{Mark, Nothing}) = ComposerError(context, context_mark, problem, problem_mark, nothing)
+
+ComposerError(problem::Union{String, Nothing}, problem_mark::Union{Mark, Nothing}) = ComposerError(nothing, nothing, problem, problem_mark)
 
 function show(io::IO, error::ComposerError)
     if error.context !== nothing
@@ -67,49 +65,48 @@ end
 
 # handle error
 
-handle_error(event::Event, composer::Composer, anchor::Union{String, Nothing}) =
+function handle_error(composer::Composer, event::Event)
+    anchor = event.anchor
     anchor !== nothing && haskey(composer, anchor) && throw(ComposerError(
         "found duplicate anchor '$anchor'; first occurance", firstmark(composer[anchor]),
         "second occurence", firstmark(event),
     ))
+    nothing
+end
 
 # handle event
 
-function handle_event(event::AliasEvent, composer::Composer)
+function handle_event(composer::Composer, event::AliasEvent)
     anchor = event.anchor
     forward!(composer)
     haskey(composer, anchor) || throw(ComposerError(
-        nothing, nothing,
         "found undefined alias '$anchor'", firstmark(event),
     ))
     composer[anchor]
 end
 
-function handle_event(event::ScalarEvent, composer::Composer)
-    anchor = event.anchor
-    handle_error(event, composer, anchor)
-    compose_scalar_node(composer, anchor)
+function handle_event(composer::Composer, event::ScalarEvent)::ScalarNode
+    handle_error(composer, event)
+    compose_scalar_node(composer, event.anchor)
 end
 
-function handle_event(event::SequenceStartEvent, composer::Composer)
-    anchor = event.anchor
-    handle_error(event, composer, anchor)
-    compose_sequence_node(composer, anchor)
+function handle_event(composer::Composer, event::SequenceStartEvent)::SequenceNode
+    handle_error(composer, event)
+    compose_sequence_node(composer, event.anchor)
 end
 
-function handle_event(event::MappingStartEvent, composer::Composer)
-    anchor = event.anchor
-    handle_error(event, composer, anchor)
-    compose_mapping_node(composer, anchor)
+function handle_event(composer::Composer, event::MappingStartEvent)::MappingNode
+    handle_error(composer, event)
+    compose_mapping_node(composer, event.anchor)
 end
 
-handle_event(event::Event, composer::Composer) = nothing
+handle_event(composer::Composer, event::Event)::Nothing = nothing
 
 # compose node
 
 function compose_node(composer::Composer)
     event = peek(composer)
-    handle_event(event, composer)
+    handle_event(composer, event)
 end
 
 # compose scalar node
