@@ -225,8 +225,8 @@ construct_mapping(constructor::Constructor, node::Node) = construct_mapping(Dict
 # custom_mapping
 # create a construct_mapping instance for a specific dicttype
 
-custom_mapping(dicttype::Type{D}) where D <: AbstractDict =
-    (constructor::Constructor, node::Node) -> construct_mapping(dicttype, constructor, node)
+custom_mapping(::Type{D}) where {D <: AbstractDict} =
+    (constructor::Constructor, node::Node) -> construct_mapping(D, constructor, node)
 
 function custom_mapping(dicttype::Function)
     dicttype_test = try
