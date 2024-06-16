@@ -48,16 +48,19 @@ const _dicttype = Union{Type, Function}
 # add a dicttype-aware version of construct_mapping to the constructors
 function _patch_constructors(more_constructors::_constructor, dicttype::_dicttype)
     if more_constructors === nothing
-        more_constructors = Dict{String,Function}()
+        more_constructors = Dict{String, Function}()
     else
-        more_constructors = copy(more_constructors) # do not change the outside world
+        # do not change the outside world
+        more_constructors = copy(more_constructors)
     end
     if !haskey(more_constructors, "tag:yaml.org,2002:map")
-        more_constructors["tag:yaml.org,2002:map"] = custom_mapping(dicttype) # map to the custom type
-    elseif dicttype != Dict{Any,Any} # only warn if another type has explicitly been set
+        # map to the custom type
+        more_constructors["tag:yaml.org,2002:map"] = custom_mapping(dicttype)
+    # only warn if another type has explicitly been set
+    elseif dicttype != Dict{Any, Any}
         @warn "dicttype=$dicttype has no effect because more_constructors has the key \"tag:yaml.org,2002:map\""
     end
-    return more_constructors
+    more_constructors
 end
 
 """
@@ -79,11 +82,15 @@ function parsefirst(io::IO, schema::Schema)
 end
 
 function parsefirst(
-    tokenstream::TokenStream, more_constructors::_constructor=nothing, multi_constructors::Dict=Dict();
-    dicttype::_dicttype=Dict{Any, Any}, constructorType::Function=SafeConstructor,
-)   
+    tokenstream::TokenStream,
+    more_constructors::_constructor=nothing,
+    multi_constructors::Dict=Dict();
+    DictType::_dicttype=Dict{Any, Any},
+    ConstructorType::Function=SafeConstructor,
+)
     resolver = Resolver()
-    constructor = constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors)
+    more_constructors = _patch_constructors(more_constructors, DictType)
+    constructor = ConstructorType(more_constructors, multi_constructors)
     schema = Schema(resolver, constructor)
     parsefirst(tokenstream, schema)
 end
@@ -121,11 +128,12 @@ function YAMLDocIterator(
     input::IO,
     more_constructors::_constructor=nothing,
     multi_constructors::Dict=Dict();
-    dicttype::_dicttype=Dict{Any, Any},
-    constructorType::Function=SafeConstructor,
+    DictType::_dicttype=Dict{Any, Any},
+    ConstructorType::Function=SafeConstructor,
 )   
     resolver = Resolver()
-    constructor = constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors)
+    more_constructors = _patch_constructors(more_constructors, DictType)
+    constructor = ConstructorType(more_constructors, multi_constructors)
     schema = Schema(resolver, constructor)
     YAMLDocIterator(input, schema)
 end

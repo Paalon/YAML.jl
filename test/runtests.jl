@@ -318,7 +318,7 @@ const dicttypes = [
     data = YAML.parsefirstfile(
         joinpath(testdir, "nested-dicts.data"),
         more_constructors;
-        dicttype=dicttype
+        DictType=dicttype
     )
     if typeof(dicttype) <: Function
         dicttype = typeof(dicttype())
@@ -401,25 +401,25 @@ end
 @test_throws YAML.ConstructorError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
-    dicttype=Dict{Float64,Any}
+    DictType=Dict{Float64,Any}
 )
 
 @test_throws YAML.ConstructorError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
-    dicttype=Dict{Any,Float64}
+    DictType=Dict{Any,Float64}
 )
 
 @test_throws ArgumentError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
-    dicttype=(mistaken_argument) -> DefaultDict{String,Any}(mistaken_argument)
+    DictType=(mistaken_argument) -> DefaultDict{String,Any}(mistaken_argument)
 )
 
 @test_throws ArgumentError YAML.parsefirstfile(
     joinpath(testdir, "nested-dicts.data"),
     more_constructors;
-    dicttype=() -> 3.0 # wrong type
+    DictType=() -> 3.0 # wrong type
 )
 
 # issue 81
