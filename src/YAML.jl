@@ -77,11 +77,23 @@ function parsefirst(io::IO, constructor::Constructor)
     parsefirst(tokenstream, constructor)
 end
 
-parsefirst(ts::TokenStream, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); dicttype::_dicttype = Dict{Any, Any}, constructorType::Function = SafeConstructor) =
-    parsefirst(ts, constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors))
+parsefirst(
+    tokenstream::TokenStream, more_constructors::_constructor=nothing, multi_constructors::Dict=Dict();
+    dicttype::_dicttype=Dict{Any, Any}, constructorType::Function=SafeConstructor,
+) = parsefirst(
+    tokenstream,
+    constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors),
+)
 
-parsefirst(input::IO, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); kwargs...) =
-    parsefirst(TokenStream(input), more_constructors, multi_constructors ; kwargs...)
+function parsefirst(
+    io::IO,
+    more_constructors::_constructor=nothing,
+    multi_constructors::Dict=Dict();
+    kwargs...,
+)
+    tokenstream = TokenStream(io)
+    parsefirst(tokenstream, more_constructors, multi_constructors; kwargs...)
+end
 
 """
     YAMLDocIterator
@@ -98,7 +110,7 @@ mutable struct YAMLDocIterator
     function YAMLDocIterator(input::IO, constructor::Constructor)
         it = new(input, TokenStream(input), constructor, nothing)
         it.next_doc = eof(it.input) ? nothing : parsefirst(it.ts, it.constructor)
-        return it
+        it
     end
 end
 
@@ -129,14 +141,17 @@ iterate(it::YAMLDocIterator, s) = done(it, s) ? nothing : next(it, s)
 
 Parse the string or stream `x` as a YAML file, and return corresponding YAML documents.
 """
-parse(input::IO, args...; kwargs...) =
-    YAMLDocIterator(input, args...; kwargs...)
+parse(io::IO, args...; kwargs...) = YAMLDocIterator(io, args...; kwargs...)
 
-parsefirst(input::AbstractString, args...; kwargs...) =
-    parsefirst(IOBuffer(input), args...; kwargs...)
+function parsefirst(str::AbstractString, args...; kwargs...)
+    io = IOBuffer(str)
+    parsefirst(io, args...; kwargs...)
+end
 
-parse(input::AbstractString, args...; kwargs...) =
-    parse(IOBuffer(input), args...; kwargs...)
+function parse(str::AbstractString, args...; kwargs...)
+    io = IOBuffer(str)
+    parse(io, args...; kwargs...)
+end
 
 """
     parsefirstfile(filename::AbstractString)
