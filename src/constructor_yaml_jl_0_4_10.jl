@@ -51,13 +51,13 @@ function construct_yaml_jl_0_4_10_schema_int(constructor::Constructor, node::Nod
 
     # hexadecimal
     if length(str) > 2 && str[1] == '0' && (str[2] == 'x' || str[2] == 'X')
-        parse(Int, str[3:end], base=16)
+        Base.parse(Int, str[3:end], base=16)
     # octal
     elseif length(str) > 1 && str[1] == '0'
-        parse(Int, str, base=8)
+        Base.parse(Int, str, base=8)
     # decimal
     else
-        parse(Int, str, base=10)
+        Base.parse(Int, str, base=10)
     end
 end
 
@@ -89,7 +89,7 @@ function construct_yaml_jl_0_4_10_schema_float(constructor::Constructor, node::N
     end
 
     # fixed or exponential
-    parse(Float64, str)
+    Base.parse(Float64, str)
 end
 
 const yaml_jl_0_4_10_schema_timestamp_regex = r"^
@@ -119,14 +119,14 @@ function construct_yaml_jl_0_4_10_schema_timestamp(constructor::Constructor, nod
     mat = match(yaml_jl_0_4_10_schema_timestamp_regex, str)
     mat === nothing && throw(ConstructorError("could not make sense of timestamp format", firstmark(node)))
 
-    yr = parse(Int, mat.captures[1])
-    mn = parse(Int, mat.captures[2])
-    dy = parse(Int, mat.captures[3])
+    yr = Base.parse(Int, mat.captures[1])
+    mn = Base.parse(Int, mat.captures[2])
+    dy = Base.parse(Int, mat.captures[3])
     mat.captures[4] === nothing && return Date(yr, mn, dy)
 
-    h = parse(Int, mat.captures[4])
-    m = parse(Int, mat.captures[5])
-    s = parse(Int, mat.captures[6])
+    h = Base.parse(Int, mat.captures[4])
+    m = Base.parse(Int, mat.captures[5])
+    s = Base.parse(Int, mat.captures[6])
     mat.captures[7] === nothing && return DateTime(yr, mn, dy, h, m, s)
 
     ms = 0
@@ -135,18 +135,18 @@ function construct_yaml_jl_0_4_10_schema_timestamp(constructor::Constructor, nod
         if length(ms) > 3
             ms = ms[1:3]
         end
-        ms = parse(Int, string(ms, repeat("0", 3 - length(ms))))
+        ms = Base.parse(Int, string(ms, repeat("0", 3 - length(ms))))
     end
 
     delta_hr = 0
     delta_mn = 0
 
     if mat.captures[9] !== nothing
-        delta_hr = parse(Int, mat.captures[9])
+        delta_hr = Base.parse(Int, mat.captures[9])
     end
 
     if mat.captures[10] !== nothing
-        delta_mn = parse(Int, mat.captures[10])
+        delta_mn = Base.parse(Int, mat.captures[10])
     end
 
     # TODO: Also, I'm not sure if there is a way to numerically set the timezone

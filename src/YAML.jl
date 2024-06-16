@@ -59,24 +59,29 @@ function _patch_constructors(more_constructors::_constructor, dicttype::_dicttyp
     return more_constructors
 end
 
-
 """
-    load(x::Union{AbstractString, IO})
+    parsefirst(x::Union{AbstractString, IO})
 
 Parse the string or stream `x` as a YAML file, and return the first YAML document as a
 Julia object.
 """
-load(ts::TokenStream, constructor::Constructor) =
-    construct_document(constructor, compose(EventStream(ts)))
+function parsefirst(tokenstream::TokenStream, constructor::Constructor)
+    eventstream = EventStream(tokenstream)
+    node = compose(eventstream)
+    document = construct_document(constructor, node)
+    document
+end
 
-load(input::IO, constructor::Constructor) =
-    load(TokenStream(input), constructor)
+function parsefirst(io::IO, constructor::Constructor)
+    tokenstream = TokenStream(io)
+    parsefirst(tokenstream, constructor)
+end
 
-load(ts::TokenStream, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); dicttype::_dicttype = Dict{Any, Any}, constructorType::Function = SafeConstructor) =
-    load(ts, constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors))
+parsefirst(ts::TokenStream, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); dicttype::_dicttype = Dict{Any, Any}, constructorType::Function = SafeConstructor) =
+    parsefirst(ts, constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors))
 
-load(input::IO, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); kwargs...) =
-    load(TokenStream(input), more_constructors, multi_constructors ; kwargs...)
+parsefirst(input::IO, more_constructors::_constructor = nothing, multi_constructors::Dict = Dict(); kwargs...) =
+    parsefirst(TokenStream(input), more_constructors, multi_constructors ; kwargs...)
 
 """
     YAMLDocIterator
@@ -92,7 +97,7 @@ mutable struct YAMLDocIterator
 
     function YAMLDocIterator(input::IO, constructor::Constructor)
         it = new(input, TokenStream(input), constructor, nothing)
-        it.next_doc = eof(it.input) ? nothing : load(it.ts, it.constructor)
+        it.next_doc = eof(it.input) ? nothing : parsefirst(it.ts, it.constructor)
         return it
     end
 end
@@ -108,9 +113,9 @@ function next(it::YAMLDocIterator, state)
         it.next_doc = nothing
     else
         reset!(it.ts)
-        it.next_doc = load(it.ts, it.constructor)
+        it.next_doc = parsefirst(it.ts, it.constructor)
     end
-    return doc, nothing
+    doc, nothing
 end
 
 done(it::YAMLDocIterator, state) = it.next_doc === nothing
@@ -120,37 +125,44 @@ iterate(it::YAMLDocIterator) = next(it, start(it))
 iterate(it::YAMLDocIterator, s) = done(it, s) ? nothing : next(it, s)
 
 """
-    load_all(x::Union{AbstractString, IO}) -> YAMLDocIterator
+    parse(x::Union{AbstractString, IO}) -> YAMLDocIterator
 
 Parse the string or stream `x` as a YAML file, and return corresponding YAML documents.
 """
-load_all(input::IO, args...; kwargs...) =
+parse(input::IO, args...; kwargs...) =
     YAMLDocIterator(input, args...; kwargs...)
 
-load(input::AbstractString, args...; kwargs...) =
-    load(IOBuffer(input), args...; kwargs...)
+parsefirst(input::AbstractString, args...; kwargs...) =
+    parsefirst(IOBuffer(input), args...; kwargs...)
 
-load_all(input::AbstractString, args...; kwargs...) =
-    load_all(IOBuffer(input), args...; kwargs...)
+parse(input::AbstractString, args...; kwargs...) =
+    parse(IOBuffer(input), args...; kwargs...)
 
 """
-    load_file(filename::AbstractString)
+    parsefirstfile(filename::AbstractString)
 
 Parse the YAML file `filename`, and return the first YAML document as a Julia object.
 """
-load_file(filename::AbstractString, args...; kwargs...) =
-    open(filename, "r") do input
-        load(input, args...; kwargs...)
+function parsefirstfile(filename::AbstractString, args...; kwargs...)
+    open(filename, "r") do io
+        parsefirst(io, args...; kwargs...)
     end
+end
 
 """
-    load_all_file(filename::AbstractString) -> YAMLDocIterator
+    parsefile(filename::AbstractString) -> YAMLDocIterator
 
 Parse the YAML file `filename`, and return corresponding YAML documents.
 """
-load_all_file(filename::AbstractString, args...; kwargs...) =
-    open(filename, "r") do input
-        load_all(input, args...; kwargs...)
+function parsefile(filename::AbstractString, args...; kwargs...)
+    open(filename, "r") do io
+        parse(io, args...; kwargs...)
     end
+end
+
+@deprecate load parsefirst
+@deprecate load_all parse
+@deprecate load_file parsefirstfile
+@deprecate load_all_file parsefile
 
 end  # module

@@ -985,7 +985,7 @@ function scan_yaml_directive_number(stream::TokenStream, start_mark::Mark)::Int
     # the decimal digit as a `String`
     str = prefix(stream.input, pos)
     # the decimal digit as an `Int`
-    n = parse(Int, str)
+    n = Base.parse(Int, str)
     # ---------------------------------------------------
     # advance the stream by the length that has been read
     # ---------------------------------------------------
@@ -1222,7 +1222,7 @@ function scan_block_scalar_indicators(stream::TokenStream, start_mark::Mark)
         yaml_1_1_forwardchars!(stream)
         c = peekchar(stream)
         if in(c, "0123456789")
-            increment = parse(Int, string(c))
+            increment = Base.parse(Int, string(c))
             if increment == 0
                 throw(ScannerError("while scanning a block scalar", start_mark,
                     "expected indentation indicator in the range 1-9, but found 0",
@@ -1230,7 +1230,7 @@ function scan_block_scalar_indicators(stream::TokenStream, start_mark::Mark)
             end
         end
     elseif in(c, "0123456789")
-        increment = parse(Int, string(c))
+        increment = Base.parse(Int, string(c))
         if increment == 0
             throw(ScannerError("while scanning a block scalar", start_mark,
                 "expected indentation indicator in the range 1-9, but found 0",
@@ -1381,7 +1381,7 @@ function scan_flow_scalar_non_spaces(stream::TokenStream, double::Bool,
                                            get_mark(stream)))
                     end
                 end
-                push!(chunks, Char(parse(Int, prefix(stream.input, len), base = 16)))
+                push!(chunks, Char(Base.parse(Int, prefix(stream.input, len), base = 16)))
                 yaml_1_1_forwardchars!(stream, len)
             elseif yaml_1_1_is_b_char(c)
                 yaml_1_1_scan_line_break(stream)
@@ -1647,7 +1647,7 @@ function scan_uri_escapes(stream::TokenStream, name::String, start_mark::Mark)
                                    get_mark(stream)))
             end
         end
-        push!(bytes, Char(parse(Int, prefix(stream.input, 2), base=16)))
+        push!(bytes, Char(Base.parse(Int, prefix(stream.input, 2), base=16)))
         yaml_1_1_forwardchars!(stream, 2)
     end
 
