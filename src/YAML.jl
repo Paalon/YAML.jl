@@ -67,8 +67,8 @@ Julia object.
 """
 function parsefirst(tokenstream::TokenStream, constructor::Constructor)
     eventstream = EventStream(tokenstream)
-    composer = Composer(eventstream, Dict{String, Node}(), Resolver())
-    node = compose(composer)
+    resolver = Resolver()
+    node = compose(eventstream, resolver)
     document = construct_document(constructor, node)
     document
 end

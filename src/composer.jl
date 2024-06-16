@@ -41,7 +41,8 @@ haskey(composer::Composer, anchor::Union{String, Nothing}) = haskey(composer.anc
 
 # compose
 
-function compose(composer::Composer)
+function compose(eventstream::EventStream, resolver::Resolver)
+    composer = Composer(eventstream, Dict{String, Node}(), resolver)
     @assert forward!(composer) isa StreamStartEvent
     node = compose_document(composer)
     if peek(composer) isa StreamEndEvent
