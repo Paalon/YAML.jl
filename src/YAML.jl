@@ -39,6 +39,7 @@ include("nodes.jl")
 include("resolver.jl")
 include("composer.jl")
 include("constructor.jl")
+include("schema.jl")
 include("writer.jl")
 
 const _constructor = Union{Dict, Nothing}
@@ -65,26 +66,27 @@ end
 Parse the string or stream `x` as a YAML file, and return the first YAML document as a
 Julia object.
 """
-function parsefirst(tokenstream::TokenStream, constructor::Constructor)
+function parsefirst(tokenstream::TokenStream, schema::Schema)
     eventstream = EventStream(tokenstream)
-    resolver = Resolver()
-    node = compose(eventstream, resolver)
-    document = construct_document(constructor, node)
+    node = compose(eventstream, schema.resolver)
+    document = construct_document(schema.constructor, node)
     document
 end
 
-function parsefirst(io::IO, constructor::Constructor)
+function parsefirst(io::IO, schema::Schema)
     tokenstream = TokenStream(io)
-    parsefirst(tokenstream, constructor)
+    parsefirst(tokenstream, schema)
 end
 
-parsefirst(
+function parsefirst(
     tokenstream::TokenStream, more_constructors::_constructor=nothing, multi_constructors::Dict=Dict();
     dicttype::_dicttype=Dict{Any, Any}, constructorType::Function=SafeConstructor,
-) = parsefirst(
-    tokenstream,
-    constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors),
-)
+)   
+    resolver = Resolver()
+    constructor = constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors)
+    schema = Schema(resolver, constructor)
+    parsefirst(tokenstream, schema)
+end
 
 function parsefirst(
     io::IO,
@@ -105,17 +107,28 @@ as a Julia object by iterating.
 mutable struct YAMLDocIterator
     input::IO
     ts::TokenStream
-    constructor::Constructor
+    schema::Schema
     next_doc
 
-    function YAMLDocIterator(input::IO, constructor::Constructor)
-        it = new(input, TokenStream(input), constructor, nothing)
-        it.next_doc = eof(it.input) ? nothing : parsefirst(it.ts, it.constructor)
+    function YAMLDocIterator(input::IO, schema::Schema)
+        it = new(input, TokenStream(input), schema, nothing)
+        it.next_doc = eof(it.input) ? nothing : parsefirst(it.ts, it.schema)
         it
     end
 end
 
-YAMLDocIterator(input::IO, more_constructors::_constructor=nothing, multi_constructors::Dict = Dict(); dicttype::_dicttype=Dict{Any, Any}, constructorType::Function = SafeConstructor) = YAMLDocIterator(input, constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors))
+function YAMLDocIterator(
+    input::IO,
+    more_constructors::_constructor=nothing,
+    multi_constructors::Dict=Dict();
+    dicttype::_dicttype=Dict{Any, Any},
+    constructorType::Function=SafeConstructor,
+)   
+    resolver = Resolver()
+    constructor = constructorType(_patch_constructors(more_constructors, dicttype), multi_constructors)
+    schema = Schema(resolver, constructor)
+    YAMLDocIterator(input, schema)
+end
 
 # Old iteration protocol:
 start(it::YAMLDocIterator) = nothing
@@ -126,7 +139,7 @@ function next(it::YAMLDocIterator, state)
         it.next_doc = nothing
     else
         reset!(it.ts)
-        it.next_doc = parsefirst(it.ts, it.constructor)
+        it.next_doc = parsefirst(it.ts, it.schema)
     end
     doc, nothing
 end

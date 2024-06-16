@@ -174,7 +174,10 @@ const testdir = dirname(@__FILE__)
         @test begin
             data = YAML.parsefirstfile(
                 joinpath(testdir, string(test, ".data")),
-                TestConstructor()
+                YAML.Schema(
+                    YAML.Resolver(),
+                    TestConstructor(),
+                ),
             )
             equivalent(data, expected)
         end
@@ -191,7 +194,10 @@ const testdir = dirname(@__FILE__)
         @test begin
             data = YAML.parsefirst(
                 yamlString,
-                TestConstructor()
+                YAML.Schema(
+                    YAML.Resolver(),
+                    TestConstructor(),
+                ),
             )
             equivalent(data, expected)
         end
@@ -209,7 +215,10 @@ const testdir = dirname(@__FILE__)
         @test begin
             data = YAML.parsefile(
                 joinpath(testdir, string(test, ".data")),
-                TestConstructor()
+                YAML.Schema(
+                    YAML.Resolver(),
+                    TestConstructor(),
+                ),
             )
             equivalent(first(data), expected)
         end
@@ -227,7 +236,10 @@ const testdir = dirname(@__FILE__)
         @test begin
             data = YAML.parse(
                 yamlString,
-                TestConstructor()
+                YAML.Schema(
+                    YAML.Resolver(),
+                    TestConstructor(),
+                ),
             )
             equivalent(first(data), expected)
         end
@@ -335,7 +347,10 @@ const test_errors = [
 @testset "YAML Errors" "error test = $test" for test in test_errors
     @test_throws YAML.ConstructorError YAML.parsefirstfile(
         joinpath(testdir, string(test, ".data")),
-        TestConstructor()
+        YAML.Schema(
+            YAML.Resolver(),
+            TestConstructor(),
+        ),
     )
 end
 
@@ -371,10 +386,13 @@ end
 
     expected = Dict{Any,Any}("Test" => Dict{Any,Any}("test2"=>["test1", "test2"],"test1"=>"data"))
 
-    @test equivalent(YAML.parsefirst(yamlString, MySafeConstructor()), expected)
+    @test equivalent(YAML.parsefirst(yamlString, YAML.Schema(YAML.Resolver(), MySafeConstructor())), expected)
     @test_throws YAML.ConstructorError YAML.parsefirst(
         yamlString,
-        MyReallySafeConstructor()
+        YAML.Schema(
+            YAML.Resolver(),
+            MyReallySafeConstructor(),
+        ),
     )
 end
 
