@@ -110,22 +110,23 @@ end
 
 const testdir = dirname(@__FILE__)
 @testset for test in tests
-    yamlString = open(joinpath(testdir, string(test, ".data"))) do f
-        read(f, String)
-    end
-    expected = evalfile(joinpath(testdir, string(test, ".expected")))
+    yaml_file_name = joinpath(testdir, "yaml/$test.yaml")
+    julia_file_name = joinpath(testdir, "julia/$test.jl")
+
+    yaml_string = read(yaml_file_name, String)
+    expected = evalfile(julia_file_name)
 
     @testset "Load from File" begin
         @test begin
             data = YAML.load_file(
-                joinpath(testdir, string(test, ".data")),
+                yaml_file_name,
                 TestConstructor()
             )
             isequal(data, expected)
         end
         @test begin
             dictData = YAML.load_file(
-                joinpath(testdir, string(test, ".data")),
+                yaml_file_name,
                 more_constructors, multi_constructors
             )
             isequal(dictData, expected)
@@ -135,7 +136,7 @@ const testdir = dirname(@__FILE__)
     @testset "Load from String" begin
         @test begin
             data = YAML.load(
-                yamlString,
+                yaml_string,
                 TestConstructor()
             )
             isequal(data, expected)
@@ -143,7 +144,7 @@ const testdir = dirname(@__FILE__)
 
         @test begin
             dictData = YAML.load(
-                yamlString,
+                yaml_string,
                 more_constructors, multi_constructors
             )
             isequal(dictData, expected)
@@ -153,7 +154,7 @@ const testdir = dirname(@__FILE__)
     @testset "Load All from File" begin
         @test begin
             data = YAML.load_all_file(
-                joinpath(testdir, string(test, ".data")),
+                yaml_file_name,
                 TestConstructor()
             )
             isequal(first(data), expected)
@@ -161,7 +162,7 @@ const testdir = dirname(@__FILE__)
 
         @test begin
             dictData = YAML.load_all_file(
-                joinpath(testdir, string(test, ".data")),
+                yaml_file_name,
                 more_constructors, multi_constructors
             )
             isequal(first(dictData), expected)
@@ -171,7 +172,7 @@ const testdir = dirname(@__FILE__)
     @testset "Load All from String" begin
         @test begin
             data = YAML.load_all(
-                yamlString,
+                yaml_string,
                 TestConstructor()
             )
             isequal(first(data), expected)
@@ -179,7 +180,7 @@ const testdir = dirname(@__FILE__)
 
         @test begin
             dictData = YAML.load_all(
-                yamlString,
+                yaml_string,
                 more_constructors, multi_constructors
             )
             isequal(first(dictData), expected)
@@ -191,7 +192,7 @@ const testdir = dirname(@__FILE__)
         @testset "Writing" begin
             @test begin
                 data = YAML.load_file(
-                    joinpath(testdir, string(test, ".data")),
+                    yaml_file_name,
                     more_constructors
                 )
                 isequal(write_and_load(data), expected)
